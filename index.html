@@ -13,20 +13,24 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 
-    <!-- LIBRERÍAS (React + Tailwind + RECHARTS para gráficos) -->
+    <!-- LIBRERÍAS (Orden Importante) -->
+    <!-- 1. React y React DOM -->
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <!-- 2. Babel para traducir el código -->
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <!-- 3. Tailwind CSS para diseño -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Librería de Gráficos -->
-    <script src="https://unpkg.com/recharts/umd/Recharts.js"></script>
+    <!-- 4. Prop-types (NECESARIO para que funcionen los gráficos) -->
+    <script src="https://unpkg.com/prop-types/prop-types.min.js"></script>
+    <!-- 5. Librería de Gráficos (Recharts) -->
+    <script src="https://unpkg.com/recharts@2.1.12/umd/Recharts.js"></script>
     
     <style>
         input[type=number] { -moz-appearance: textfield; }
         input[type=number]::-webkit-inner-spin-button, 
         input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
         body { -webkit-tap-highlight-color: transparent; }
-        /* Animación suave para cambio de pestañas */
         .fade-in { animation: fadeIn 0.3s ease-in-out; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
     </style>
@@ -37,8 +41,8 @@
 
     <script type="text/babel">
         const { useState, useEffect, useMemo } = React;
-        // Importamos componentes de Recharts
-        const { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Cell } = Recharts;
+        // Importamos componentes de Recharts de manera segura
+        const { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Cell } = window.Recharts || {};
 
         // --- ICONOS ---
         const IconCalc = () => <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="4" y="2" width="16" height="20" rx="2"/><line x1="8" y1="6" x2="16" y2="6"/><line x1="16" y1="14" x2="16" y2="14"/><line x1="12" y1="14" x2="12" y2="14"/><line x1="8" y1="14" x2="8" y2="14"/><line x1="16" y1="18" x2="16" y2="18"/><line x1="12" y1="18" x2="12" y2="18"/><line x1="8" y1="18" x2="8" y2="18"/></svg>;
@@ -69,7 +73,7 @@
                     <span className="font-bold text-gray-700 text-lg">{label}</span>
                     <span className="text-xs text-gray-400">Toca para editar</span>
                 </div>
-                <input type="number" value={value || ''} onChange={(e) => onChange(parseInt(e.target.value) || 0)} placeholder="0" className="w-24 bg-gray-50 text-center font-bold text-2xl text-blue-600 rounded-lg py-2 border border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none" />
+                <input type="number" value={value === 0 ? '' : value} onChange={(e) => onChange(parseInt(e.target.value) || 0)} placeholder="0" className="w-24 bg-gray-50 text-center font-bold text-2xl text-blue-600 rounded-lg py-2 border border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none" />
             </div>
         );
         const Modal = ({ isOpen, onClose, title, children }) => {
@@ -87,7 +91,9 @@
 
         // --- COMPONENTE DE ESTADÍSTICAS ---
         const StatsView = ({ historial }) => {
-            // Lógica para procesar datos
+            // Verificamos si Recharts cargó correctamente
+            if (!window.Recharts) return <div className="p-4 text-center text-red-500">Error cargando gráficos. Refresca la página.</div>;
+
             const dataSemanal = useMemo(() => {
                 const dias = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
                 const hoy = new Date();
@@ -96,7 +102,6 @@
                     const d = new Date(hoy);
                     d.setDate(hoy.getDate() - i);
                     const dayName = dias[d.getDay()];
-                    // Filtrar ventas de este día
                     const totalDia = historial
                         .filter(h => h.tipo === 'venta' && new Date(h.timestamp || h.id).toDateString() === d.toDateString())
                         .reduce((acc, curr) => acc + curr.monto, 0);
@@ -161,7 +166,7 @@
 
         function App() {
             // Estados
-            const [view, setView] = useState('caja'); // 'caja' | 'stats'
+            const [view, setView] = useState('caja');
             const [empCarne, setEmpCarne] = useState(0);
             const [empQueso, setEmpQueso] = useState(0);
             const [papa, setPapa] = useState(0);
@@ -196,12 +201,12 @@
             const calcularTotalVenta = (c, q, p, r) => ((c + q) * precios.empanada) + (p * precios.papa) + (r * precios.rocoto);
             const totalDia = calcularTotalVenta(empCarne, empQueso, papa, rocoto);
 
-            // Funciones Core
+            // Funciones
             const agregarAlSaldo = () => {
                 if (totalDia === 0) return;
                 const nuevo = { id: Date.now(), tipo: 'venta', monto: totalDia, timestamp: Date.now(), breakdown: { empCarne, empQueso, papa, rocoto } };
                 setSaldoTotal(saldoTotal + totalDia);
-                setHistorial([nuevo, ...historial].slice(0, 100)); // Guardamos mas historial para los graficos
+                setHistorial([nuevo, ...historial].slice(0, 100));
                 setEmpCarne(0); setEmpQueso(0); setPapa(0); setRocoto(0);
                 if (navigator.vibrate) navigator.vibrate(50);
             };
@@ -221,7 +226,6 @@
                 return `${d.toLocaleDateString('es-PE', {weekday:'short'})}, ${d.toLocaleDateString('es-PE', {day:'2-digit', month:'short'})}`;
             };
 
-            // Edición
             const guardarEdicion = () => {
                  if (!editingItem) return;
                  let nuevoMonto = 0;
@@ -233,14 +237,11 @@
                  }
                  const diff = nuevoMonto - editingItem.monto;
                  setSaldoTotal(editingItem.tipo === 'venta' ? saldoTotal + diff : saldoTotal - diff);
-                 
                  const nuevoItem = { ...editingItem, monto: nuevoMonto };
                  if(editingItem.tipo === 'venta') {
                     nuevoItem.breakdown = editingItem.tempBreakdown;
                     delete nuevoItem.tempBreakdown;
-                 } else {
-                    delete nuevoItem.tempMonto;
-                 }
+                 } else { delete nuevoItem.tempMonto; }
                  setHistorial(historial.map(h => h.id === editingItem.id ? nuevoItem : h));
                  setEditingItem(null);
             };
@@ -252,7 +253,6 @@
                 setEditingItem(null);
             };
 
-            // Respaldo
             const generarRespaldoWhatsApp = () => {
                 const data = { saldo: saldoTotal, hist: historial, prec: precios, fecha: new Date().toISOString() };
                 const msg = `🔐 *COPIA SEGURIDAD*\nSaldo: S/. ${saldoTotal.toFixed(2)}\n\nCÓDIGO:\n${JSON.stringify(data)}`;
@@ -285,7 +285,7 @@
                     <div className="p-4 space-y-4">
                         {view === 'caja' && (
                             <div className="space-y-4 fade-in">
-                                {/* Tarjeta Deuda */}
+                                {/* Tarjeta Deuda (Color Corregido a Gris Oscuro) */}
                                 <div className="bg-gray-800 rounded-xl shadow-md p-4 text-white border-l-4 border-emerald-400 shadow-xl">
                                     <div className="flex justify-between items-start">
                                         <div><p className="text-gray-400 text-xs uppercase font-bold tracking-wider">Deuda Total</p><h2 className="text-4xl font-bold mt-1">S/. {saldoTotal.toFixed(2)}</h2></div>
@@ -348,7 +348,7 @@
                         {view === 'stats' && <StatsView historial={historial} />}
                     </div>
 
-                    {/* BARRA DE NAVEGACIÓN INFERIOR (NUEVO) */}
+                    {/* BARRA DE NAVEGACIÓN INFERIOR */}
                     <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-2 flex justify-around items-center z-40 max-w-md mx-auto shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)]">
                         <button onClick={() => setView('caja')} className={`flex flex-col items-center p-2 rounded-lg w-1/2 transition ${view === 'caja' ? 'text-emerald-600 bg-emerald-50' : 'text-gray-400'}`}>
                             <IconCalc />
