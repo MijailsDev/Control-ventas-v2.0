@@ -25,7 +25,7 @@
     <script src="https://unpkg.com/prop-types/prop-types.min.js"></script>
     <script src="https://unpkg.com/recharts@2.1.12/umd/Recharts.js"></script>
     
-    <!-- 3. LIBRERÍAS PARA PDF (NUEVO) -->
+    <!-- 3. LIBRERÍAS PARA PDF -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
     
@@ -42,7 +42,6 @@
         .online-badge { width: 8px; height: 8px; border-radius: 50%; box-shadow: 0 0 5px rgba(255,255,255,0.5); }
         .status-ok { background-color: #34d399; }
         .status-loading { background-color: #fbbf24; animation: pulse 1s infinite; }
-        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
     </style>
 </head>
 <body class="bg-gray-100 text-gray-800 font-sans select-none overflow-hidden fixed inset-0">
@@ -76,7 +75,7 @@
         const IconDollar = () => <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>;
         const IconTrash = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>;
         const IconSave = () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>;
-        const IconSettings = () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>;
+        const IconSettings = () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>;
         const IconEdit = () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>;
         const IconX = () => <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>;
         const IconLock = () => <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>;
@@ -93,15 +92,30 @@
             };
             return <button onClick={onClick} className={`flex items-center justify-center font-bold py-3 px-4 rounded-lg transition-all active:scale-95 ${vars[variant]} ${className}`}>{children}</button>;
         };
+        
+        // --- INPUT MODIFICADO: NO PERMITE NEGATIVOS ---
         const NumberInput = ({ label, value, onChange }) => (
             <div className="flex items-center justify-between py-3 border-b border-gray-100 last:border-0">
                 <div className="flex flex-col flex-1">
                     <span className="font-bold text-gray-700 text-lg">{label}</span>
                     <span className="text-xs text-gray-400">Toca para editar</span>
                 </div>
-                <input type="number" value={value === 0 ? '' : value} onChange={(e) => onChange(parseInt(e.target.value) || 0)} placeholder="0" className="w-24 bg-gray-50 text-center font-bold text-2xl text-blue-600 rounded-lg py-2 border border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none" />
+                <input 
+                    type="number" 
+                    min="0"
+                    pattern="\d*"
+                    value={value === 0 ? '' : value} 
+                    onChange={(e) => {
+                        let val = parseInt(e.target.value);
+                        if (isNaN(val)) val = 0;
+                        onChange(Math.abs(val)); // Convierte a positivo siempre
+                    }} 
+                    placeholder="0" 
+                    className="w-24 bg-gray-50 text-center font-bold text-2xl text-blue-600 rounded-lg py-2 border border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none" 
+                />
             </div>
         );
+
         const Modal = ({ isOpen, onClose, title, children }) => {
             if (!isOpen) return null;
             return (
@@ -115,75 +129,40 @@
             );
         };
 
-        // --- PANTALLA DE BLOQUEO ---
         const LockScreen = ({ onUnlock, isSettingUp }) => {
             const [pin, setPin] = useState("");
             const [error, setError] = useState("");
-
-            const handleSubmit = () => {
-                if(pin.length < 4) { setError("Mínimo 4 dígitos"); return; }
-                onUnlock(pin);
-            };
-
+            const handleSubmit = () => { if(pin.length < 4) { setError("Mínimo 4 dígitos"); return; } onUnlock(pin); };
             return (
                 <div className="fixed inset-0 bg-emerald-900 z-[100] flex flex-col items-center justify-center p-6 text-white fade-in">
                     <div className="mb-6 p-4 bg-emerald-800 rounded-full shadow-lg"><IconLock /></div>
                     <h2 className="text-2xl font-bold mb-2">{isSettingUp ? "Crea tu PIN de Acceso" : "App Bloqueada"}</h2>
                     <p className="text-emerald-200 text-sm mb-6 text-center">{isSettingUp ? "Define una clave secreta para proteger tus datos." : "Ingresa tu PIN para acceder."}</p>
-                    
                     <input type="tel" value={pin} onChange={(e) => {setPin(e.target.value); setError("");}} className="bg-emerald-800 text-white text-center text-4xl font-bold w-48 p-3 rounded-lg outline-none border-2 border-emerald-600 focus:border-emerald-400 mb-4 tracking-widest" placeholder="****" maxLength={6} />
                     {error && <p className="text-red-300 text-sm mb-4 font-bold">{error}</p>}
-                    
-                    <button onClick={handleSubmit} className="bg-white text-emerald-900 font-bold py-3 px-8 rounded-full shadow-lg hover:bg-emerald-50 active:scale-95 transition w-full max-w-xs">
-                        {isSettingUp ? "Guardar y Entrar" : "Desbloquear"}
-                    </button>
+                    <button onClick={handleSubmit} className="bg-white text-emerald-900 font-bold py-3 px-8 rounded-full shadow-lg hover:bg-emerald-50 active:scale-95 transition w-full max-w-xs">{isSettingUp ? "Guardar y Entrar" : "Desbloquear"}</button>
                 </div>
             );
         };
 
-        // --- COMPONENTE ESTADÍSTICAS ---
         const StatsView = ({ historial }) => {
             if (!window.Recharts) return <div className="p-4 text-center text-red-500">Cargando gráficos...</div>;
-
             const dataSemanal = useMemo(() => {
-                const dias = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
-                const hoy = new Date();
-                const data = [];
+                const dias = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb']; const hoy = new Date(); const data = [];
                 for (let i = 6; i >= 0; i--) {
-                    const d = new Date(hoy);
-                    d.setDate(hoy.getDate() - i);
-                    const dayName = dias[d.getDay()];
+                    const d = new Date(hoy); d.setDate(hoy.getDate() - i); const dayName = dias[d.getDay()];
                     const totalDia = historial.filter(h => h.tipo === 'venta' && new Date(h.timestamp || h.id).toDateString() === d.toDateString()).reduce((acc, curr) => acc + curr.monto, 0);
                     data.push({ name: dayName, total: totalDia });
-                }
-                return data;
+                } return data;
             }, [historial]);
-
             const dataMensual = useMemo(() => {
-                const meses = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
-                const currentYear = new Date().getFullYear();
-                const data = meses.map(m => ({ name: m, total: 0 }));
-                historial.forEach(h => {
-                    if (h.tipo === 'venta') {
-                        const date = new Date(h.timestamp || h.id);
-                        if (date.getFullYear() === currentYear) data[date.getMonth()].total += h.monto;
-                    }
-                });
-                return data;
+                const meses = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic']; const currentYear = new Date().getFullYear(); const data = meses.map(m => ({ name: m, total: 0 }));
+                historial.forEach(h => { if (h.tipo === 'venta') { const date = new Date(h.timestamp || h.id); if (date.getFullYear() === currentYear) data[date.getMonth()].total += h.monto; } }); return data;
             }, [historial]);
-
             const dataAnual = useMemo(() => {
-                const data = {};
-                historial.forEach(h => {
-                    if (h.tipo === 'venta') {
-                        const year = new Date(h.timestamp || h.id).getFullYear().toString();
-                        if (!data[year]) data[year] = 0;
-                        data[year] += h.monto;
-                    }
-                });
+                const data = {}; historial.forEach(h => { if (h.tipo === 'venta') { const year = new Date(h.timestamp || h.id).getFullYear().toString(); if (!data[year]) data[year] = 0; data[year] += h.monto; } });
                 return Object.keys(data).sort().map(year => ({ name: year, total: data[year] }));
             }, [historial]);
-
             return (
                 <div className="space-y-6 fade-in pt-2 pb-8">
                     <Card><h3 className="font-bold text-gray-700 mb-4 flex items-center gap-2 text-sm"> Últimos 7 Días</h3><div className="h-40 w-full text-xs"><ResponsiveContainer width="100%" height="100%"><BarChart data={dataSemanal}><CartesianGrid strokeDasharray="3 3" vertical={false} /><XAxis dataKey="name" axisLine={false} tickLine={false} /><Tooltip cursor={{fill: '#f3f4f6'}} contentStyle={{borderRadius:'8px'}} /><Bar dataKey="total" fill="#059669" radius={[4, 4, 0, 0]}><Cell key={`cell-6`} fill={'#2563eb'} /></Bar></BarChart></ResponsiveContainer></div></Card>
@@ -194,32 +173,13 @@
         };
 
         function App() {
-            // Estados UI
-            const [isLocked, setIsLocked] = useState(true);
-            const [setupMode, setSetupMode] = useState(false);
-            const [view, setView] = useState('caja');
-            const [isMenuOpen, setIsMenuOpen] = useState(false);
-            const [showPayment, setShowPayment] = useState(false);
-            const [showSettings, setShowSettings] = useState(false);
-            const [editingItem, setEditingItem] = useState(null);
-            
-            // Estados para Venta Pasada
-            const [showPastSale, setShowPastSale] = useState(false);
-            const [pastDate, setPastDate] = useState("");
-            const [pastInputs, setPastInputs] = useState({ empCarne: 0, empQueso: 0, papa: 0, rocoto: 0 });
-            
-            // Estados de Datos
-            const [empCarne, setEmpCarne] = useState(0);
-            const [empQueso, setEmpQueso] = useState(0);
-            const [papa, setPapa] = useState(0);
-            const [rocoto, setRocoto] = useState(0);
-            const [montoPago, setMontoPago] = useState("");
-            
-            // Estados Firebase
-            const [saldoTotal, setSaldoTotal] = useState(0);
-            const [historial, setHistorial] = useState([]);
-            const [precios, setPrecios] = useState({ empanada: 2.50, papa: 2.00, rocoto: 3.50 });
-            const [loading, setLoading] = useState(true);
+            const [isLocked, setIsLocked] = useState(true); const [setupMode, setSetupMode] = useState(false); const [view, setView] = useState('caja');
+            const [isMenuOpen, setIsMenuOpen] = useState(false); const [showPayment, setShowPayment] = useState(false); const [showSettings, setShowSettings] = useState(false);
+            const [editingItem, setEditingItem] = useState(null); const [showPastSale, setShowPastSale] = useState(false);
+            const [pastDate, setPastDate] = useState(""); const [pastInputs, setPastInputs] = useState({ empCarne: 0, empQueso: 0, papa: 0, rocoto: 0 });
+            const [empCarne, setEmpCarne] = useState(0); const [empQueso, setEmpQueso] = useState(0); const [papa, setPapa] = useState(0); const [rocoto, setRocoto] = useState(0);
+            const [montoPago, setMontoPago] = useState(""); const [saldoTotal, setSaldoTotal] = useState(0); const [historial, setHistorial] = useState([]);
+            const [precios, setPrecios] = useState({ empanada: 2.50, papa: 2.00, rocoto: 3.50 }); const [loading, setLoading] = useState(true);
 
             useEffect(() => {
                 const checkAuth = async () => {
@@ -231,72 +191,31 @@
                 };
                 checkAuth();
             }, []);
-
             useEffect(() => { if(!isLocked) initData(); }, [isLocked]);
 
             const handleUnlock = async (inputPin) => {
                 const docRef = db.collection('app').doc('configuracion');
-                if (setupMode) {
-                    await docRef.set({ pin: inputPin }, { merge: true });
-                    localStorage.setItem('app_unlocked', 'true');
-                    alert("¡PIN Guardado! No lo olvides.");
-                    setIsLocked(false);
-                } else {
-                    const doc = await docRef.get();
-                    if (doc.data().pin === inputPin) {
-                        localStorage.setItem('app_unlocked', 'true');
-                        setIsLocked(false);
-                    } else { alert("PIN Incorrecto 🚫"); }
-                }
+                if (setupMode) { await docRef.set({ pin: inputPin }, { merge: true }); localStorage.setItem('app_unlocked', 'true'); alert("¡PIN Guardado! No lo olvides."); setIsLocked(false); } 
+                else { const doc = await docRef.get(); if (doc.data().pin === inputPin) { localStorage.setItem('app_unlocked', 'true'); setIsLocked(false); } else { alert("PIN Incorrecto 🚫"); } }
             };
-
-            const logout = () => {
-                if(confirm("¿Bloquear aplicación?")) {
-                    localStorage.removeItem('app_unlocked');
-                    setIsLocked(true); setIsMenuOpen(false); setShowSettings(false);
-                }
-            };
+            const logout = () => { if(confirm("¿Bloquear aplicación?")) { localStorage.removeItem('app_unlocked'); setIsLocked(true); setIsMenuOpen(false); setShowSettings(false); } };
 
             const initData = () => {
                 const migrateLocalData = async () => {
-                    const localSaldo = localStorage.getItem('app_deudas_saldo');
-                    const localHist = localStorage.getItem('app_deudas_historial');
-                    const localPrecios = localStorage.getItem('app_deudas_precios');
+                    const localSaldo = localStorage.getItem('app_deudas_saldo'); const localHist = localStorage.getItem('app_deudas_historial'); const localPrecios = localStorage.getItem('app_deudas_precios');
                     if (localSaldo && localHist) {
-                        const configRef = db.collection('app').doc('configuracion');
-                        const doc = await configRef.get();
+                        const configRef = db.collection('app').doc('configuracion'); const doc = await configRef.get();
                         if (!doc.exists || !doc.data().saldo) { 
                             if(confirm("♻️ Se encontraron datos antiguos. ¿Subirlos a la nube?")) {
-                                const batch = db.batch();
-                                batch.set(configRef, {
-                                    saldo: parseFloat(localSaldo) || 0,
-                                    precios: localPrecios ? JSON.parse(localPrecios) : precios
-                                }, {merge: true});
-                                const histArr = JSON.parse(localHist);
-                                histArr.forEach(item => {
-                                    const newRef = db.collection('movimientos').doc(item.id.toString());
-                                    batch.set(newRef, item);
-                                });
-                                await batch.commit();
-                                alert("¡Datos migrados! ☁️");
+                                const batch = db.batch(); batch.set(configRef, { saldo: parseFloat(localSaldo) || 0, precios: localPrecios ? JSON.parse(localPrecios) : precios }, {merge: true});
+                                const histArr = JSON.parse(localHist); histArr.forEach(item => { const newRef = db.collection('movimientos').doc(item.id.toString()); batch.set(newRef, item); });
+                                await batch.commit(); alert("¡Datos migrados! ☁️");
                             }
                         }
                     }
                 };
-
-                const unsubConfig = db.collection('app').doc('configuracion').onSnapshot(doc => {
-                    if (doc.exists) {
-                        const data = doc.data();
-                        if(data.saldo !== undefined) setSaldoTotal(data.saldo);
-                        if(data.precios) setPrecios(data.precios);
-                    } else { migrateLocalData(); }
-                    setLoading(false);
-                });
-
-                const unsubHist = db.collection('movimientos').orderBy('id', 'desc').limit(300).onSnapshot(snapshot => {
-                    const list = snapshot.docs.map(d => d.data());
-                    setHistorial(list);
-                });
+                const unsubConfig = db.collection('app').doc('configuracion').onSnapshot(doc => { if (doc.exists) { const data = doc.data(); if(data.saldo !== undefined) setSaldoTotal(data.saldo); if(data.precios) setPrecios(data.precios); } else { migrateLocalData(); } setLoading(false); });
+                const unsubHist = db.collection('movimientos').orderBy('id', 'desc').limit(300).onSnapshot(snapshot => { const list = snapshot.docs.map(d => d.data()); setHistorial(list); });
                 return () => { unsubConfig(); unsubHist(); };
             };
 
@@ -305,223 +224,92 @@
 
             const agregarAlSaldo = async () => {
                 if (totalDia === 0) return;
-                const batch = db.batch();
-                const nuevoId = Date.now();
-                const movRef = db.collection('movimientos').doc(nuevoId.toString());
-                batch.set(movRef, {
-                    id: nuevoId, tipo: 'venta', monto: totalDia, timestamp: nuevoId,
-                    breakdown: { empCarne, empQueso, papa, rocoto }
-                });
-                const configRef = db.collection('app').doc('configuracion');
-                batch.set(configRef, { saldo: saldoTotal + totalDia }, { merge: true });
-                await batch.commit();
-                setEmpCarne(0); setEmpQueso(0); setPapa(0); setRocoto(0);
-                if (navigator.vibrate) navigator.vibrate(50);
+                const batch = db.batch(); const nuevoId = Date.now(); const movRef = db.collection('movimientos').doc(nuevoId.toString());
+                batch.set(movRef, { id: nuevoId, tipo: 'venta', monto: totalDia, timestamp: nuevoId, breakdown: { empCarne, empQueso, papa, rocoto } });
+                const configRef = db.collection('app').doc('configuracion'); batch.set(configRef, { saldo: saldoTotal + totalDia }, { merge: true });
+                await batch.commit(); setEmpCarne(0); setEmpQueso(0); setPapa(0); setRocoto(0); if (navigator.vibrate) navigator.vibrate(50);
             };
 
             const registrarPago = async () => {
-                const val = parseFloat(montoPago);
-                if (!val || val <= 0) return;
-                const batch = db.batch();
-                const nuevoId = Date.now();
-                const movRef = db.collection('movimientos').doc(nuevoId.toString());
-                batch.set(movRef, {
-                    id: nuevoId, tipo: 'pago', monto: val, timestamp: nuevoId, detalle: 'Pago a cuenta'
-                });
-                const configRef = db.collection('app').doc('configuracion');
-                batch.set(configRef, { saldo: saldoTotal - val }, { merge: true });
-                await batch.commit();
-                setMontoPago(""); setShowPayment(false);
-                if (navigator.vibrate) navigator.vibrate([50, 50, 50]);
+                const val = parseFloat(montoPago); if (!val || val <= 0) return;
+                const batch = db.batch(); const nuevoId = Date.now(); const movRef = db.collection('movimientos').doc(nuevoId.toString());
+                batch.set(movRef, { id: nuevoId, tipo: 'pago', monto: val, timestamp: nuevoId, detalle: 'Pago a cuenta' });
+                const configRef = db.collection('app').doc('configuracion'); batch.set(configRef, { saldo: saldoTotal - val }, { merge: true });
+                await batch.commit(); setMontoPago(""); setShowPayment(false); if (navigator.vibrate) navigator.vibrate([50, 50, 50]);
             };
 
             const guardarEdicion = async () => {
                  if (!editingItem) return;
-                 let nuevoMonto = 0;
-                 let nuevoItem = { ...editingItem };
+                 let nuevoMonto = 0; let nuevoItem = { ...editingItem };
                  if (editingItem.tipo === 'venta') {
                      const { empCarne, empQueso, papa, rocoto } = editingItem.tempBreakdown;
                      nuevoMonto = calcularTotalVenta(empCarne, empQueso, papa, rocoto);
-                     nuevoItem.monto = nuevoMonto;
-                     nuevoItem.breakdown = editingItem.tempBreakdown;
-                     delete nuevoItem.tempBreakdown;
-                 } else {
-                     nuevoMonto = parseFloat(editingItem.tempMonto);
-                     nuevoItem.monto = nuevoMonto;
-                     delete nuevoItem.tempMonto;
-                 }
-                 const diff = nuevoMonto - editingItem.monto;
-                 const nuevoSaldo = editingItem.tipo === 'venta' ? saldoTotal + diff : saldoTotal - diff;
-                 const batch = db.batch();
-                 batch.update(db.collection('movimientos').doc(editingItem.id.toString()), nuevoItem);
-                 batch.update(db.collection('app').doc('configuracion'), { saldo: nuevoSaldo });
-                 await batch.commit();
-                 setEditingItem(null);
+                     nuevoItem.monto = nuevoMonto; nuevoItem.breakdown = editingItem.tempBreakdown; delete nuevoItem.tempBreakdown;
+                 } else { nuevoMonto = parseFloat(editingItem.tempMonto); nuevoItem.monto = nuevoMonto; delete nuevoItem.tempMonto; }
+                 const diff = nuevoMonto - editingItem.monto; const nuevoSaldo = editingItem.tipo === 'venta' ? saldoTotal + diff : saldoTotal - diff;
+                 const batch = db.batch(); batch.update(db.collection('movimientos').doc(editingItem.id.toString()), nuevoItem); batch.update(db.collection('app').doc('configuracion'), { saldo: nuevoSaldo });
+                 await batch.commit(); setEditingItem(null);
             };
 
             const eliminarItem = async () => {
                 if(!confirm("¿Borrar este registro?")) return;
                 const nuevoSaldo = editingItem.tipo === 'venta' ? saldoTotal - editingItem.monto : saldoTotal + editingItem.monto;
-                const batch = db.batch();
-                batch.delete(db.collection('movimientos').doc(editingItem.id.toString()));
-                batch.update(db.collection('app').doc('configuracion'), { saldo: nuevoSaldo });
-                await batch.commit();
-                setEditingItem(null);
+                const batch = db.batch(); batch.delete(db.collection('movimientos').doc(editingItem.id.toString())); batch.update(db.collection('app').doc('configuracion'), { saldo: nuevoSaldo });
+                await batch.commit(); setEditingItem(null);
             };
 
-            const guardarPrecios = async (newPrecios) => {
-                setPrecios(newPrecios); 
-                await db.collection('app').doc('configuracion').set({ precios: newPrecios }, { merge: true });
-            };
+            const guardarPrecios = async (newPrecios) => { setPrecios(newPrecios); await db.collection('app').doc('configuracion').set({ precios: newPrecios }, { merge: true }); };
+            const resetearTodo = async () => { if(!confirm("⚠️ ¿BORRAR TODO?")) return; const batch = db.batch(); historial.forEach(h => { batch.delete(db.collection('movimientos').doc(h.id.toString())); }); batch.set(db.collection('app').doc('configuracion'), { saldo: 0, precios: precios }, {merge: true}); await batch.commit(); };
 
-            const resetearTodo = async () => {
-                if(!confirm("⚠️ ¿BORRAR TODO? Se eliminarán los datos de la nube.")) return;
-                const batch = db.batch();
-                historial.forEach(h => { batch.delete(db.collection('movimientos').doc(h.id.toString())); });
-                batch.set(db.collection('app').doc('configuracion'), { saldo: 0, precios: precios }, {merge: true});
-                await batch.commit();
-            };
-
-            // --- NUEVAS FUNCIONES V2.2 ---
-            
             const compartirPDF = async () => {
-                const { jsPDF } = window.jspdf;
-                const doc = new jsPDF();
-                
-                // Título
-                doc.setFontSize(18);
-                doc.text("Historial de Ventas - Reporte", 14, 20);
-                doc.setFontSize(12);
-                doc.text(`Generado el: ${new Date().toLocaleDateString()}`, 14, 28);
-                
-                // Datos para la tabla
-                const tableData = historial.map(h => [
-                    new Date(h.timestamp || h.id).toLocaleDateString() + ' ' + new Date(h.timestamp || h.id).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}),
-                    h.tipo === 'venta' ? 'VENTA' : 'PAGO',
-                    h.tipo === 'venta' 
-                        ? `${h.breakdown.empCarne+h.breakdown.empQueso} Emp, ${h.breakdown.papa} Pap, ${h.breakdown.rocoto} Roc`
-                        : h.detalle || 'Pago a cuenta',
-                    `S/. ${h.monto.toFixed(2)}`
-                ]);
-
-                // Generar tabla
-                doc.autoTable({
-                    head: [['Fecha y Hora', 'Tipo', 'Detalle', 'Monto']],
-                    body: tableData,
-                    startY: 35,
-                    theme: 'grid',
-                    headStyles: { fillColor: [5, 150, 105] }, // Verde Esmeralda
-                });
-
-                // Compartir o Descargar
+                const { jsPDF } = window.jspdf; const doc = new jsPDF();
+                doc.setFontSize(18); doc.text("Historial de Ventas - Reporte", 14, 20); doc.setFontSize(12); doc.text(`Generado el: ${new Date().toLocaleDateString()}`, 14, 28);
+                const tableData = historial.map(h => [ new Date(h.timestamp || h.id).toLocaleDateString() + ' ' + new Date(h.timestamp || h.id).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}), h.tipo === 'venta' ? 'VENTA' : 'PAGO', h.tipo === 'venta' ? `${h.breakdown.empCarne+h.breakdown.empQueso} Emp, ${h.breakdown.papa} Pap, ${h.breakdown.rocoto} Roc` : h.detalle || 'Pago a cuenta', `S/. ${h.monto.toFixed(2)}` ]);
+                doc.autoTable({ head: [['Fecha y Hora', 'Tipo', 'Detalle', 'Monto']], body: tableData, startY: 35, theme: 'grid', headStyles: { fillColor: [5, 150, 105] }, });
                 const fileName = `ventas_${new Date().toISOString().split('T')[0]}.pdf`;
-                
-                // Intento de compartir nativo (Móvil)
-                if (navigator.canShare && navigator.share) {
-                    try {
-                        const pdfBlob = doc.output('blob');
-                        const file = new File([pdfBlob], fileName, { type: "application/pdf" });
-                        if(navigator.canShare({ files: [file] })) {
-                            await navigator.share({
-                                files: [file],
-                                title: 'Reporte de Ventas',
-                                text: 'Aquí tienes el historial de ventas en PDF.'
-                            });
-                            return; // Si se compartió, terminamos
-                        }
-                    } catch (e) { console.log("No se pudo compartir nativamente, descargando..."); }
-                }
-                
-                // Fallback: Descarga directa (PC o si falla compartir)
+                if (navigator.canShare && navigator.share) { try { const pdfBlob = doc.output('blob'); const file = new File([pdfBlob], fileName, { type: "application/pdf" }); if(navigator.canShare({ files: [file] })) { await navigator.share({ files: [file], title: 'Reporte de Ventas', text: 'Aquí tienes el historial de ventas en PDF.' }); return; } } catch (e) { console.log("Descargando..."); } }
                 doc.save(fileName);
             };
 
             const guardarVentaPasada = async () => {
                 if(!pastDate) { alert("Selecciona una fecha"); return; }
-                const { empCarne, empQueso, papa, rocoto } = pastInputs;
-                const total = calcularTotalVenta(empCarne, empQueso, papa, rocoto);
+                const { empCarne, empQueso, papa, rocoto } = pastInputs; const total = calcularTotalVenta(empCarne, empQueso, papa, rocoto);
                 if (total === 0) { alert("Agrega al menos un producto"); return; }
-
-                // Crear un timestamp combinando la fecha seleccionada con la hora actual (para evitar colisiones)
-                // Ojo: En JS el mes empieza en 0, pero el input date da "YYYY-MM-DD" que es seguro parsear
-                const [y, m, d] = pastDate.split('-');
-                const fechaRegistro = new Date(y, m-1, d, 12, 0, 0); // Mediodía de ese día
-                const nuevoId = fechaRegistro.getTime();
-
-                const batch = db.batch();
-                const movRef = db.collection('movimientos').doc(nuevoId.toString());
-                batch.set(movRef, {
-                    id: nuevoId,
-                    tipo: 'venta',
-                    monto: total,
-                    timestamp: nuevoId,
-                    breakdown: { ...pastInputs }
-                });
-
-                const configRef = db.collection('app').doc('configuracion');
-                batch.set(configRef, { saldo: saldoTotal + total }, { merge: true });
-
-                await batch.commit();
-                
-                alert("¡Venta del pasado guardada correctamente!");
-                setPastInputs({ empCarne: 0, empQueso: 0, papa: 0, rocoto: 0 });
-                setPastDate("");
-                setShowPastSale(false);
+                const [y, m, d] = pastDate.split('-'); const fechaRegistro = new Date(y, m-1, d, 12, 0, 0); const nuevoId = fechaRegistro.getTime();
+                const batch = db.batch(); const movRef = db.collection('movimientos').doc(nuevoId.toString());
+                batch.set(movRef, { id: nuevoId, tipo: 'venta', monto: total, timestamp: nuevoId, breakdown: { ...pastInputs } });
+                const configRef = db.collection('app').doc('configuracion'); batch.set(configRef, { saldo: saldoTotal + total }, { merge: true });
+                await batch.commit(); alert("¡Venta guardada!"); setPastInputs({ empCarne: 0, empQueso: 0, papa: 0, rocoto: 0 }); setPastDate(""); setShowPastSale(false);
             };
 
-            const formatearFecha = (ts) => {
-                const d = new Date(ts);
-                return `${d.toLocaleDateString('es-PE', {weekday:'short'})}, ${d.toLocaleDateString('es-PE', {day:'2-digit', month:'short'})}`;
-            };
-
-            const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
-            const switchView = (v) => { setView(v); setIsMenuOpen(false); };
-            const openSettings = () => { setShowSettings(true); setIsMenuOpen(false); };
+            const formatearFecha = (ts) => { const d = new Date(ts); return `${d.toLocaleDateString('es-PE', {weekday:'short'})}, ${d.toLocaleDateString('es-PE', {day:'2-digit', month:'short'})}`; };
+            const toggleMenu = () => setIsMenuOpen(!isMenuOpen); const switchView = (v) => { setView(v); setIsMenuOpen(false); }; const openSettings = () => { setShowSettings(true); setIsMenuOpen(false); };
 
             if (isLocked) return <LockScreen onUnlock={handleUnlock} isSettingUp={setupMode} />;
 
             return (
                 <div className="max-w-md mx-auto min-h-screen relative bg-gray-50">
-                    
-                    {/* Header */}
                     <div className="bg-emerald-600 text-white p-4 shadow-lg sticky top-0 z-10 flex items-center justify-between">
-                        <button onClick={toggleMenu} className="p-1 rounded-full hover:bg-emerald-700 transition">
-                            <IconMenu />
-                        </button>
-                        <h1 className="text-xl font-bold flex items-center gap-2">
-                            <IconCalc/> Control Ventas
-                        </h1>
-                        <div className="relative" title={loading ? "Conectando..." : "Conectado"}>
-                            <div className={`online-badge ${loading ? 'status-loading' : 'status-ok'}`}></div>
-                        </div>
+                        <button onClick={toggleMenu} className="p-1 rounded-full hover:bg-emerald-700 transition"><IconMenu /></button>
+                        <h1 className="text-xl font-bold flex items-center gap-2"><IconCalc/> Control Ventas</h1>
+                        <div className="relative" title={loading ? "Conectando..." : "Conectado"}><div className={`online-badge ${loading ? 'status-loading' : 'status-ok'}`}></div></div>
                     </div>
 
-                    {/* MENU LATERAL */}
                     {isMenuOpen && (
                         <div className="fixed inset-0 z-50 flex">
                             <div className="fixed inset-0 bg-black/50 fade-in" onClick={toggleMenu}></div>
                             <div className="relative bg-white w-64 h-full shadow-2xl flex flex-col p-4 slide-in z-50">
                                 <h2 className="text-2xl font-bold text-emerald-700 mb-6 border-b pb-4">Menú</h2>
                                 <nav className="space-y-2 flex-1">
-                                    <button onClick={() => switchView('caja')} className={`w-full text-left p-3 rounded-xl flex items-center gap-3 font-bold transition ${view === 'caja' ? 'bg-emerald-50 text-emerald-600' : 'text-gray-600 hover:bg-gray-50'}`}>
-                                        <IconCalc /> Caja Principal
-                                    </button>
-                                    <button onClick={() => switchView('stats')} className={`w-full text-left p-3 rounded-xl flex items-center gap-3 font-bold transition ${view === 'stats' ? 'bg-blue-50 text-blue-600' : 'text-gray-600 hover:bg-gray-50'}`}>
-                                        <IconChart /> Estadísticas
-                                    </button>
+                                    <button onClick={() => switchView('caja')} className={`w-full text-left p-3 rounded-xl flex items-center gap-3 font-bold transition ${view === 'caja' ? 'bg-emerald-50 text-emerald-600' : 'text-gray-600 hover:bg-gray-50'}`}><IconCalc /> Caja Principal</button>
+                                    <button onClick={() => switchView('stats')} className={`w-full text-left p-3 rounded-xl flex items-center gap-3 font-bold transition ${view === 'stats' ? 'bg-blue-50 text-blue-600' : 'text-gray-600 hover:bg-gray-50'}`}><IconChart /> Estadísticas</button>
                                     <div className="h-px bg-gray-100 my-2"></div>
-                                    <button onClick={() => {setShowPastSale(true); setIsMenuOpen(false);}} className="w-full text-left p-3 rounded-xl flex items-center gap-3 font-bold text-gray-600 hover:bg-gray-50">
-                                        <IconCalendar /> Registrar Día Anterior
-                                    </button>
-                                    <button onClick={() => {compartirPDF(); setIsMenuOpen(false);}} className="w-full text-left p-3 rounded-xl flex items-center gap-3 font-bold text-gray-600 hover:bg-gray-50">
-                                        <IconPdf /> Exportar Historial (PDF)
-                                    </button>
+                                    <button onClick={() => {setShowPastSale(true); setIsMenuOpen(false);}} className="w-full text-left p-3 rounded-xl flex items-center gap-3 font-bold text-gray-600 hover:bg-gray-50"><IconCalendar /> Registrar Día Anterior</button>
+                                    <button onClick={() => {compartirPDF(); setIsMenuOpen(false);}} className="w-full text-left p-3 rounded-xl flex items-center gap-3 font-bold text-gray-600 hover:bg-gray-50"><IconPdf /> Exportar Historial (PDF)</button>
                                     <div className="h-px bg-gray-100 my-2"></div>
-                                    <button onClick={openSettings} className="w-full text-left p-3 rounded-xl flex items-center gap-3 font-bold text-gray-600 hover:bg-gray-50">
-                                        <IconSettings /> Configuración
-                                    </button>
+                                    <button onClick={openSettings} className="w-full text-left p-3 rounded-xl flex items-center gap-3 font-bold text-gray-600 hover:bg-gray-50"><IconSettings /> Configuración</button>
                                 </nav>
-                                <p className="text-center text-xs text-gray-300">v2.2 Pro</p>
+                                <p className="text-center text-xs text-gray-300">v2.3 Integrity</p>
                             </div>
                         </div>
                     )}
@@ -529,7 +317,6 @@
                     <div className="p-4 space-y-4">
                         {view === 'caja' && (
                             <div className="space-y-4 fade-in">
-                                {/* Tarjeta Deuda (Gris Oscuro) */}
                                 <div className="bg-gray-800 rounded-xl shadow-md p-4 text-white border-l-4 border-emerald-400 shadow-xl relative overflow-hidden">
                                     {loading && <div className="absolute inset-0 bg-black/50 flex items-center justify-center backdrop-blur-sm z-10"><span className="text-xs font-bold animate-pulse text-white">Sincronizando...</span></div>}
                                     <div className="flex justify-between items-start">
@@ -538,13 +325,23 @@
                                     </div>
                                     {showPayment && (
                                         <div className="mt-4 pt-4 border-t border-gray-700 flex gap-2 animate-in slide-in-from-top-2 fade-in">
-                                            <input type="number" value={montoPago} onChange={e=>setMontoPago(e.target.value)} placeholder="0.00" className="flex-1 min-w-0 bg-emerald-100 p-3 rounded-lg text-emerald-900 font-bold text-lg outline-none focus:ring-2 focus:ring-emerald-500 placeholder-emerald-700/50"/>
+                                            <input 
+                                                type="number" 
+                                                value={montoPago} 
+                                                onChange={e => {
+                                                    let val = e.target.value;
+                                                    // Evitar negativos en string directo
+                                                    if(val.startsWith('-')) val = val.replace('-','');
+                                                    setMontoPago(val);
+                                                }}
+                                                placeholder="0.00" 
+                                                className="flex-1 min-w-0 bg-emerald-100 p-3 rounded-lg text-emerald-900 font-bold text-lg outline-none focus:ring-2 focus:ring-emerald-500 placeholder-emerald-700/50"
+                                            />
                                             <button onClick={registrarPago} className="bg-emerald-500 hover:bg-emerald-400 px-4 rounded-lg font-bold text-white transition shrink-0">Pagar</button>
                                         </div>
                                     )}
                                 </div>
 
-                                {/* Inputs */}
                                 <Card>
                                     <div className="flex justify-between mb-4 items-center">
                                         <h3 className="font-bold flex items-center gap-2 text-lg"><div className="w-1 h-6 bg-blue-500 rounded-full"></div> Venta de Hoy</h3>
@@ -563,7 +360,6 @@
                                     <Button onClick={agregarAlSaldo} variant="secondary" className="w-full mt-4 gap-2 text-lg"><IconSave/> Guardar en Deuda</Button>
                                 </Card>
 
-                                {/* Historial */}
                                 <Card>
                                     <h3 className="font-bold text-gray-800 mb-4 text-lg border-b pb-2">Movimientos Recientes</h3>
                                     {historial.length === 0 ? <p className="text-gray-400 text-center text-sm py-4">Sin registros en la nube</p> : 
@@ -593,37 +389,28 @@
                         {view === 'stats' && <StatsView historial={historial} />}
                     </div>
 
-                    {/* MODAL: VENTA PASADA (NUEVO) */}
                     <Modal isOpen={showPastSale} onClose={()=>setShowPastSale(false)} title="Agregar Venta Pasada">
                         <div className="space-y-4">
-                            <div className="bg-yellow-50 p-3 rounded-lg border border-yellow-200 text-sm text-yellow-800">
-                                📅 Selecciona la fecha del cuaderno para agregarla al historial.
-                            </div>
-                            <div className="flex flex-col">
-                                <label className="font-bold text-gray-600 mb-1">Fecha de la venta:</label>
-                                <input type="date" value={pastDate} onChange={e=>setPastDate(e.target.value)} className="p-3 border rounded-lg bg-white font-bold text-lg" />
-                            </div>
+                            <div className="bg-yellow-50 p-3 rounded-lg border border-yellow-200 text-sm text-yellow-800">📅 Selecciona la fecha del cuaderno para agregarla al historial.</div>
+                            <div className="flex flex-col"><label className="font-bold text-gray-600 mb-1">Fecha de la venta:</label><input type="date" value={pastDate} onChange={e=>setPastDate(e.target.value)} className="p-3 border rounded-lg bg-white font-bold text-lg" /></div>
                             <div className="space-y-1 pt-2 border-t">
                                 <NumberInput label="Emp. Carne" value={pastInputs.empCarne} onChange={v=>setPastInputs({...pastInputs, empCarne:v})} />
                                 <NumberInput label="Emp. Queso" value={pastInputs.empQueso} onChange={v=>setPastInputs({...pastInputs, empQueso:v})} />
                                 <NumberInput label="Papa Reb." value={pastInputs.papa} onChange={v=>setPastInputs({...pastInputs, papa:v})} />
                                 <NumberInput label="Rocoto Rell." value={pastInputs.rocoto} onChange={v=>setPastInputs({...pastInputs, rocoto:v})} />
                             </div>
-                            <div className="pt-4">
-                                <Button onClick={guardarVentaPasada} className="w-full">Guardar en el Historial</Button>
-                            </div>
+                            <div className="pt-4"><Button onClick={guardarVentaPasada} className="w-full">Guardar en el Historial</Button></div>
                         </div>
                     </Modal>
 
-                    {/* Modales Existentes */}
                     <Modal isOpen={showSettings} onClose={()=>setShowSettings(false)} title="Configuración">
                         <div className="space-y-6">
                             <div className="bg-gray-50 p-4 rounded-xl border border-gray-100">
                                 <h4 className="font-bold text-gray-700 mb-3 flex items-center gap-2"><IconDollar size={16}/> Precios</h4>
                                 <div className="space-y-2">
-                                    <div className="flex justify-between items-center"><label className="text-sm">Empanada</label><input type="number" value={precios.empanada} onChange={e=>guardarPrecios({...precios, empanada: parseFloat(e.target.value)||0})} className="w-20 font-bold text-right border rounded p-1"/></div>
-                                    <div className="flex justify-between items-center"><label className="text-sm">Papa</label><input type="number" value={precios.papa} onChange={e=>guardarPrecios({...precios, papa: parseFloat(e.target.value)||0})} className="w-20 font-bold text-right border rounded p-1"/></div>
-                                    <div className="flex justify-between items-center"><label className="text-sm">Rocoto</label><input type="number" value={precios.rocoto} onChange={e=>guardarPrecios({...precios, rocoto: parseFloat(e.target.value)||0})} className="w-20 font-bold text-right border rounded p-1"/></div>
+                                    <div className="flex justify-between items-center"><label className="text-sm">Empanada</label><input type="number" min="0" value={precios.empanada} onChange={e=>guardarPrecios({...precios, empanada: Math.abs(parseFloat(e.target.value)||0)})} className="w-20 font-bold text-right border rounded p-1"/></div>
+                                    <div className="flex justify-between items-center"><label className="text-sm">Papa</label><input type="number" min="0" value={precios.papa} onChange={e=>guardarPrecios({...precios, papa: Math.abs(parseFloat(e.target.value)||0)})} className="w-20 font-bold text-right border rounded p-1"/></div>
+                                    <div className="flex justify-between items-center"><label className="text-sm">Rocoto</label><input type="number" min="0" value={precios.rocoto} onChange={e=>guardarPrecios({...precios, rocoto: Math.abs(parseFloat(e.target.value)||0)})} className="w-20 font-bold text-right border rounded p-1"/></div>
                                 </div>
                             </div>
                             <div className="space-y-3">
@@ -644,7 +431,16 @@
                                         <NumberInput label="Rocoto" value={editingItem.tempBreakdown.rocoto} onChange={v=>setEditingItem({...editingItem, tempBreakdown:{...editingItem.tempBreakdown, rocoto:v}})} />
                                     </div>
                                 ) : (
-                                    <input type="number" value={editingItem.tempMonto} onChange={e=>setEditingItem({...editingItem, tempMonto:e.target.value})} className="border w-full p-2 font-bold text-xl"/>
+                                    <input 
+                                        type="number" 
+                                        value={editingItem.tempMonto} 
+                                        onChange={e => {
+                                            let val = e.target.value;
+                                            if(val.startsWith('-')) val = val.replace('-',''); // Solo positivos
+                                            setEditingItem({...editingItem, tempMonto: val});
+                                        }} 
+                                        className="border w-full p-2 font-bold text-xl"
+                                    />
                                 )}
                                 <div className="flex gap-2"><button onClick={eliminarItem} className="bg-red-100 text-red-600 p-3 rounded"><IconTrash/></button><button onClick={guardarEdicion} className="bg-blue-600 text-white flex-1 rounded font-bold">Guardar</button></div>
                              </div>
