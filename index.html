@@ -13,7 +13,11 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 
-    <!-- LIBRERÍAS (Orden Importante) -->
+    <!-- 1. LIBRERÍAS DE FIREBASE (Compat) -->
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+
+    <!-- 2. REACT Y UTILIDADES -->
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
@@ -30,6 +34,11 @@
         .slide-in { animation: slideIn 0.3s ease-out; }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
         @keyframes slideIn { from { transform: translateX(-100%); } to { transform: translateX(0); } }
+        
+        /* Indicador de conexión */
+        .online-badge { position: absolute; top: 1rem; right: 3.5rem; width: 0.5rem; height: 0.5rem; border-radius: 50%; }
+        .online { background-color: #34d399; box-shadow: 0 0 10px #34d399; }
+        .offline { background-color: #ef4444; }
     </style>
 </head>
 <body class="bg-gray-100 text-gray-800 font-sans select-none overflow-hidden fixed inset-0">
@@ -37,10 +46,27 @@
     <div id="root" class="h-full overflow-y-auto"></div>
 
     <script type="text/babel">
+        // --- 3. INICIALIZACIÓN DE FIREBASE ---
+        const firebaseConfig = {
+            apiKey: "AIzaSyDcXlU67WlsDG9SrABEiwCQCsIje78RiBs",
+            authDomain: "mis-ventas-19a08.firebaseapp.com",
+            projectId: "mis-ventas-19a08",
+            storageBucket: "mis-ventas-19a08.firebasestorage.app",
+            messagingSenderId: "805360347430",
+            appId: "1:805360347430:web:75552d2a7eeb970881f9e7"
+        };
+
+        // Iniciar solo si no existe ya
+        if (!firebase.apps.length) {
+            firebase.initializeApp(firebaseConfig);
+        }
+        const db = firebase.firestore();
+
+        // --- COMPONENTES REACT ---
         const { useState, useEffect, useMemo } = React;
         const { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Cell } = window.Recharts || {};
 
-        // --- ICONOS ---
+        // Iconos
         const IconMenu = () => <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>;
         const IconCalc = () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="4" y="2" width="16" height="20" rx="2"/><line x1="8" y1="6" x2="16" y2="6"/><line x1="16" y1="14" x2="16" y2="14"/><line x1="12" y1="14" x2="12" y2="14"/><line x1="8" y1="14" x2="8" y2="14"/><line x1="16" y1="18" x2="16" y2="18"/><line x1="12" y1="18" x2="12" y2="18"/><line x1="8" y1="18" x2="8" y2="18"/></svg>;
         const IconChart = () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>;
@@ -49,11 +75,9 @@
         const IconSave = () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>;
         const IconSettings = () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>;
         const IconEdit = () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>;
-        const IconShare = () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>;
-        const IconUpload = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>;
         const IconX = () => <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>;
+        const IconCloud = () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/></svg>;
 
-        // Componentes UI
         const Card = ({ children, className = "" }) => <div className={`bg-white rounded-xl shadow-md p-4 ${className}`}>{children}</div>;
         const Button = ({ onClick, children, variant = "primary", className = "" }) => {
             const vars = {
@@ -86,11 +110,9 @@
             );
         };
 
-        // --- COMPONENTE DE ESTADÍSTICAS ---
         const StatsView = ({ historial }) => {
-            if (!window.Recharts) return <div className="p-4 text-center text-red-500">Error cargando gráficos. Refresca la página.</div>;
+            if (!window.Recharts) return <div className="p-4 text-center text-red-500">Cargando gráficos...</div>;
 
-            // Datos Semanales
             const dataSemanal = useMemo(() => {
                 const dias = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
                 const hoy = new Date();
@@ -107,7 +129,6 @@
                 return data;
             }, [historial]);
 
-            // Datos Mensuales
             const dataMensual = useMemo(() => {
                 const meses = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
                 const currentYear = new Date().getFullYear();
@@ -121,7 +142,6 @@
                 return data;
             }, [historial]);
 
-            // Datos Anuales
             const dataAnual = useMemo(() => {
                 const data = {};
                 historial.forEach(h => {
@@ -131,7 +151,6 @@
                         data[year] += h.monto;
                     }
                 });
-                // Convertir a array y ordenar
                 return Object.keys(data).sort().map(year => ({ name: year, total: data[year] }));
             }, [historial]);
 
@@ -139,48 +158,15 @@
                 <div className="space-y-6 fade-in pt-2 pb-8">
                     <Card>
                         <h3 className="font-bold text-gray-700 mb-4 flex items-center gap-2 text-sm"> Últimos 7 Días</h3>
-                        <div className="h-40 w-full text-xs">
-                            <ResponsiveContainer width="100%" height="100%">
-                                <BarChart data={dataSemanal}>
-                                    <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                                    <XAxis dataKey="name" axisLine={false} tickLine={false} />
-                                    <Tooltip cursor={{fill: '#f3f4f6'}} contentStyle={{borderRadius: '8px', border:'none', boxShadow:'0 4px 6px -1px rgb(0 0 0 / 0.1)'}} />
-                                    <Bar dataKey="total" fill="#059669" radius={[4, 4, 0, 0]}>
-                                        {dataSemanal.map((entry, index) => (
-                                            <Cell key={`cell-${index}`} fill={index === 6 ? '#2563eb' : '#059669'} />
-                                        ))}
-                                    </Bar>
-                                </BarChart>
-                            </ResponsiveContainer>
-                        </div>
+                        <div className="h-40 w-full text-xs"><ResponsiveContainer width="100%" height="100%"><BarChart data={dataSemanal}><CartesianGrid strokeDasharray="3 3" vertical={false} /><XAxis dataKey="name" axisLine={false} tickLine={false} /><Tooltip cursor={{fill: '#f3f4f6'}} contentStyle={{borderRadius:'8px'}} /><Bar dataKey="total" fill="#059669" radius={[4, 4, 0, 0]}><Cell key={`cell-6`} fill={'#2563eb'} /></Bar></BarChart></ResponsiveContainer></div>
                     </Card>
-
                     <Card>
                         <h3 className="font-bold text-gray-700 mb-4 text-sm">Ventas por Mes ({new Date().getFullYear()})</h3>
-                        <div className="h-40 w-full text-xs">
-                            <ResponsiveContainer width="100%" height="100%">
-                                <BarChart data={dataMensual}>
-                                    <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                                    <XAxis dataKey="name" axisLine={false} tickLine={false} interval={0} />
-                                    <Tooltip />
-                                    <Bar dataKey="total" fill="#3b82f6" radius={[4, 4, 0, 0]} />
-                                </BarChart>
-                            </ResponsiveContainer>
-                        </div>
+                        <div className="h-40 w-full text-xs"><ResponsiveContainer width="100%" height="100%"><BarChart data={dataMensual}><CartesianGrid strokeDasharray="3 3" vertical={false} /><XAxis dataKey="name" axisLine={false} tickLine={false} interval={0} /><Tooltip /><Bar dataKey="total" fill="#3b82f6" radius={[4, 4, 0, 0]} /></BarChart></ResponsiveContainer></div>
                     </Card>
-
                     <Card>
                         <h3 className="font-bold text-gray-700 mb-4 text-sm">Ventas por Año</h3>
-                        <div className="h-40 w-full text-xs">
-                            <ResponsiveContainer width="100%" height="100%">
-                                <BarChart data={dataAnual}>
-                                    <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                                    <XAxis dataKey="name" axisLine={false} tickLine={false} />
-                                    <Tooltip />
-                                    <Bar dataKey="total" fill="#8b5cf6" radius={[4, 4, 0, 0]} />
-                                </BarChart>
-                            </ResponsiveContainer>
-                        </div>
+                        <div className="h-40 w-full text-xs"><ResponsiveContainer width="100%" height="100%"><BarChart data={dataAnual}><CartesianGrid strokeDasharray="3 3" vertical={false} /><XAxis dataKey="name" axisLine={false} tickLine={false} /><Tooltip /><Bar dataKey="total" fill="#8b5cf6" radius={[4, 4, 0, 0]} /></BarChart></ResponsiveContainer></div>
                         {dataAnual.length === 0 && <p className="text-center text-gray-400 text-xs mt-2">Aún no hay datos anuales</p>}
                     </Card>
                 </div>
@@ -188,114 +174,214 @@
         };
 
         function App() {
-            // Estados
             const [view, setView] = useState('caja');
             const [isMenuOpen, setIsMenuOpen] = useState(false);
             const [empCarne, setEmpCarne] = useState(0);
             const [empQueso, setEmpQueso] = useState(0);
             const [papa, setPapa] = useState(0);
             const [rocoto, setRocoto] = useState(0);
+            
+            // Estados para Firebase
             const [saldoTotal, setSaldoTotal] = useState(0);
             const [historial, setHistorial] = useState([]);
+            const [precios, setPrecios] = useState({ empanada: 2.50, papa: 2.00, rocoto: 3.50 });
+            const [loading, setLoading] = useState(true);
+
+            // UI States
             const [showPayment, setShowPayment] = useState(false);
             const [montoPago, setMontoPago] = useState("");
             const [showSettings, setShowSettings] = useState(false);
             const [editingItem, setEditingItem] = useState(null);
-            const [importJson, setImportJson] = useState("");
-            const [showImport, setShowImport] = useState(false);
-            const [precios, setPrecios] = useState({ empanada: 2.50, papa: 2.00, rocoto: 3.50 });
 
-            // Cargar datos
+            // --- SINCRONIZACIÓN FIREBASE ---
             useEffect(() => {
-                const s = localStorage.getItem('app_deudas_saldo');
-                const h = localStorage.getItem('app_deudas_historial');
-                const p = localStorage.getItem('app_deudas_precios');
-                if (s) setSaldoTotal(parseFloat(s));
-                if (h) setHistorial(JSON.parse(h));
-                if (p) setPrecios(JSON.parse(p));
+                const migrateLocalData = async () => {
+                    const localSaldo = localStorage.getItem('app_deudas_saldo');
+                    const localHist = localStorage.getItem('app_deudas_historial');
+                    const localPrecios = localStorage.getItem('app_deudas_precios');
+
+                    if (localSaldo && localHist) {
+                        console.log("Migrando datos locales a Firebase...");
+                        // Solo migramos si el documento de configuración no existe en la nube
+                        const configRef = db.collection('app').doc('configuracion');
+                        const doc = await configRef.get();
+                        
+                        if (!doc.exists) {
+                            const batch = db.batch();
+                            batch.set(configRef, {
+                                saldo: parseFloat(localSaldo) || 0,
+                                precios: localPrecios ? JSON.parse(localPrecios) : precios
+                            });
+                            
+                            const histArr = JSON.parse(localHist);
+                            histArr.forEach(item => {
+                                const newRef = db.collection('movimientos').doc(item.id.toString());
+                                batch.set(newRef, item);
+                            });
+                            
+                            await batch.commit();
+                            alert("¡Tus datos antiguos se han subido a la nube con éxito! ☁️");
+                            // Limpiamos local para evitar duplicados futuros
+                            localStorage.removeItem('app_deudas_saldo');
+                            localStorage.removeItem('app_deudas_historial');
+                        }
+                    }
+                };
+
+                // 1. Escuchar Configuración (Saldo y Precios)
+                const unsubConfig = db.collection('app').doc('configuracion')
+                    .onSnapshot(doc => {
+                        if (doc.exists) {
+                            const data = doc.data();
+                            setSaldoTotal(data.saldo || 0);
+                            if(data.precios) setPrecios(data.precios);
+                        } else {
+                            // Si no existe, intentar migrar o crear inicial
+                            migrateLocalData();
+                        }
+                        setLoading(false);
+                    });
+
+                // 2. Escuchar Historial (Últimos 100)
+                const unsubHist = db.collection('movimientos')
+                    .orderBy('id', 'desc') // Usamos ID que es timestamp
+                    .limit(100)
+                    .onSnapshot(snapshot => {
+                        const list = snapshot.docs.map(doc => doc.data());
+                        setHistorial(list);
+                    });
+
+                return () => { unsubConfig(); unsubHist(); };
             }, []);
 
-            // Guardar datos
-            useEffect(() => {
-                localStorage.setItem('app_deudas_saldo', saldoTotal.toString());
-                localStorage.setItem('app_deudas_historial', JSON.stringify(historial));
-                localStorage.setItem('app_deudas_precios', JSON.stringify(precios));
-            }, [saldoTotal, historial, precios]);
-
+            // --- ACCIONES FIREBASE ---
             const calcularTotalVenta = (c, q, p, r) => ((c + q) * precios.empanada) + (p * precios.papa) + (r * precios.rocoto);
             const totalDia = calcularTotalVenta(empCarne, empQueso, papa, rocoto);
 
-            // Funciones
-            const agregarAlSaldo = () => {
+            const agregarAlSaldo = async () => {
                 if (totalDia === 0) return;
-                const nuevo = { id: Date.now(), tipo: 'venta', monto: totalDia, timestamp: Date.now(), breakdown: { empCarne, empQueso, papa, rocoto } };
-                setSaldoTotal(saldoTotal + totalDia);
-                setHistorial([nuevo, ...historial].slice(0, 300)); // Guardamos mas para estadisticas
+                
+                const batch = db.batch();
+                const nuevoId = Date.now();
+                
+                // 1. Crear registro en historial
+                const movRef = db.collection('movimientos').doc(nuevoId.toString());
+                batch.set(movRef, {
+                    id: nuevoId,
+                    tipo: 'venta',
+                    monto: totalDia,
+                    timestamp: nuevoId,
+                    breakdown: { empCarne, empQueso, papa, rocoto }
+                });
+
+                // 2. Actualizar saldo global
+                const configRef = db.collection('app').doc('configuracion');
+                batch.update(configRef, { saldo: saldoTotal + totalDia });
+
+                await batch.commit();
+                
                 setEmpCarne(0); setEmpQueso(0); setPapa(0); setRocoto(0);
                 if (navigator.vibrate) navigator.vibrate(50);
             };
 
-            const registrarPago = () => {
+            const registrarPago = async () => {
                 const val = parseFloat(montoPago);
                 if (!val || val <= 0) return;
-                const nuevo = { id: Date.now(), tipo: 'pago', monto: val, timestamp: Date.now(), detalle: 'Pago a cuenta' };
-                setSaldoTotal(saldoTotal - val);
-                setHistorial([nuevo, ...historial].slice(0, 300));
+
+                const batch = db.batch();
+                const nuevoId = Date.now();
+
+                // 1. Crear registro
+                const movRef = db.collection('movimientos').doc(nuevoId.toString());
+                batch.set(movRef, {
+                    id: nuevoId,
+                    tipo: 'pago',
+                    monto: val,
+                    timestamp: nuevoId,
+                    detalle: 'Pago a cuenta'
+                });
+
+                // 2. Restar saldo
+                const configRef = db.collection('app').doc('configuracion');
+                batch.update(configRef, { saldo: saldoTotal - val });
+
+                await batch.commit();
+
                 setMontoPago(""); setShowPayment(false);
                 if (navigator.vibrate) navigator.vibrate([50, 50, 50]);
+            };
+
+            const guardarEdicion = async () => {
+                 if (!editingItem) return;
+                 let nuevoMonto = 0;
+                 let nuevoItem = { ...editingItem };
+
+                 if (editingItem.tipo === 'venta') {
+                     const { empCarne, empQueso, papa, rocoto } = editingItem.tempBreakdown;
+                     nuevoMonto = calcularTotalVenta(empCarne, empQueso, papa, rocoto);
+                     nuevoItem.monto = nuevoMonto;
+                     nuevoItem.breakdown = editingItem.tempBreakdown;
+                     delete nuevoItem.tempBreakdown;
+                 } else {
+                     nuevoMonto = parseFloat(editingItem.tempMonto);
+                     nuevoItem.monto = nuevoMonto;
+                     delete nuevoItem.tempMonto;
+                 }
+
+                 // Calculamos la diferencia para ajustar el saldo
+                 const diff = nuevoMonto - editingItem.monto;
+                 const nuevoSaldo = editingItem.tipo === 'venta' ? saldoTotal + diff : saldoTotal - diff;
+
+                 const batch = db.batch();
+                 // Actualizar movimiento
+                 const movRef = db.collection('movimientos').doc(editingItem.id.toString());
+                 batch.update(movRef, nuevoItem);
+                 // Actualizar saldo
+                 const configRef = db.collection('app').doc('configuracion');
+                 batch.update(configRef, { saldo: nuevoSaldo });
+
+                 await batch.commit();
+                 setEditingItem(null);
+            };
+
+            const eliminarItem = async () => {
+                if(!confirm("¿Borrar este registro de la nube?")) return;
+                
+                const batch = db.batch();
+                // Ajustar saldo (revertir operación)
+                const nuevoSaldo = editingItem.tipo === 'venta' ? saldoTotal - editingItem.monto : saldoTotal + editingItem.monto;
+                
+                const configRef = db.collection('app').doc('configuracion');
+                batch.update(configRef, { saldo: nuevoSaldo });
+                
+                // Borrar doc
+                const movRef = db.collection('movimientos').doc(editingItem.id.toString());
+                batch.delete(movRef);
+
+                await batch.commit();
+                setEditingItem(null);
+            };
+
+            const guardarPrecios = async (newPrecios) => {
+                setPrecios(newPrecios); // Optimistic UI
+                await db.collection('app').doc('configuracion').update({ precios: newPrecios });
+            };
+
+            const resetearTodo = async () => {
+                if(!confirm("⚠️ ¿BORRAR TODO? Esto eliminará todos los datos de la nube permanentemente.")) return;
+                
+                // Borrar coleccion es dificil desde cliente, reseteamos saldo y borramos uno a uno los recientes
+                const batch = db.batch();
+                historial.forEach(h => {
+                    batch.delete(db.collection('movimientos').doc(h.id.toString()));
+                });
+                batch.set(db.collection('app').doc('configuracion'), { saldo: 0, precios: precios }); // Reset saldo
+                await batch.commit();
             };
 
             const formatearFecha = (ts) => {
                 const d = new Date(ts);
                 return `${d.toLocaleDateString('es-PE', {weekday:'short'})}, ${d.toLocaleDateString('es-PE', {day:'2-digit', month:'short'})}`;
-            };
-
-            const guardarEdicion = () => {
-                 if (!editingItem) return;
-                 let nuevoMonto = 0;
-                 if (editingItem.tipo === 'venta') {
-                     const { empCarne, empQueso, papa, rocoto } = editingItem.tempBreakdown;
-                     nuevoMonto = calcularTotalVenta(empCarne, empQueso, papa, rocoto);
-                 } else {
-                     nuevoMonto = parseFloat(editingItem.tempMonto);
-                 }
-                 const diff = nuevoMonto - editingItem.monto;
-                 setSaldoTotal(editingItem.tipo === 'venta' ? saldoTotal + diff : saldoTotal - diff);
-                 const nuevoItem = { ...editingItem, monto: nuevoMonto };
-                 if(editingItem.tipo === 'venta') {
-                    nuevoItem.breakdown = editingItem.tempBreakdown;
-                    delete nuevoItem.tempBreakdown;
-                 } else { delete nuevoItem.tempMonto; }
-                 setHistorial(historial.map(h => h.id === editingItem.id ? nuevoItem : h));
-                 setEditingItem(null);
-            };
-
-            const eliminarItem = () => {
-                if(!confirm("¿Borrar este registro?")) return;
-                setSaldoTotal(editingItem.tipo === 'venta' ? saldoTotal - editingItem.monto : saldoTotal + editingItem.monto);
-                setHistorial(historial.filter(h => h.id !== editingItem.id));
-                setEditingItem(null);
-            };
-
-            const generarRespaldoWhatsApp = () => {
-                const data = { saldo: saldoTotal, hist: historial, prec: precios, fecha: new Date().toISOString() };
-                const msg = `🔐 *COPIA SEGURIDAD*\nSaldo: S/. ${saldoTotal.toFixed(2)}\n\nCÓDIGO:\n${JSON.stringify(data)}`;
-                if (navigator.share) navigator.share({ text: msg }).catch(console.error);
-                else window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, '_blank');
-            };
-
-            const importarDatos = () => {
-                try {
-                    const firstBrace = importJson.indexOf('{');
-                    const lastBrace = importJson.lastIndexOf('}');
-                    if(firstBrace === -1) throw new Error();
-                    const data = JSON.parse(importJson.substring(firstBrace, lastBrace + 1));
-                    if (confirm(`Sobrescribir con Saldo: S/. ${data.saldo}?`)) {
-                        setSaldoTotal(data.saldo); setHistorial(data.hist); 
-                        if(data.prec) setPrecios(data.prec);
-                        setShowImport(false); alert("Restaurado!");
-                    }
-                } catch (e) { alert("Error en el código pegado"); }
             };
 
             const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
@@ -310,16 +396,18 @@
                         <button onClick={toggleMenu} className="p-1 rounded-full hover:bg-emerald-700 transition">
                             <IconMenu />
                         </button>
-                        <h1 className="text-xl font-bold flex items-center gap-2"><IconCalc/> Control Ventas</h1>
-                        <div className="w-8"></div> {/* Espaciador para centrar */}
+                        <h1 className="text-xl font-bold flex items-center gap-2">
+                            <IconCalc/> Control Ventas
+                        </h1>
+                        <div className="relative">
+                            <div className={`online-badge ${loading ? 'bg-yellow-400' : 'online'}`}></div>
+                        </div>
                     </div>
 
-                    {/* MENU LATERAL (DRAWER) */}
+                    {/* MENU LATERAL */}
                     {isMenuOpen && (
                         <div className="fixed inset-0 z-50 flex">
-                            {/* Overlay oscuro */}
                             <div className="fixed inset-0 bg-black/50 fade-in" onClick={toggleMenu}></div>
-                            {/* Panel blanco */}
                             <div className="relative bg-white w-64 h-full shadow-2xl flex flex-col p-4 slide-in z-50">
                                 <h2 className="text-2xl font-bold text-emerald-700 mb-6 border-b pb-4">Menú</h2>
                                 <nav className="space-y-2 flex-1">
@@ -334,7 +422,7 @@
                                         <IconSettings /> Configuración
                                     </button>
                                 </nav>
-                                <p className="text-center text-xs text-gray-300">v2.1</p>
+                                <p className="text-center text-xs text-gray-300">v3.0 Cloud</p>
                             </div>
                         </div>
                     )}
@@ -342,8 +430,9 @@
                     <div className="p-4 space-y-4">
                         {view === 'caja' && (
                             <div className="space-y-4 fade-in">
-                                {/* Tarjeta Deuda (Gris Oscuro) */}
-                                <div className="bg-gray-800 rounded-xl shadow-md p-4 text-white border-l-4 border-emerald-400 shadow-xl">
+                                {/* Tarjeta Deuda */}
+                                <div className="bg-gray-800 rounded-xl shadow-md p-4 text-white border-l-4 border-emerald-400 shadow-xl relative overflow-hidden">
+                                    {loading && <div className="absolute inset-0 bg-black/50 flex items-center justify-center backdrop-blur-sm z-10"><span className="text-sm font-bold animate-pulse">Sincronizando...</span></div>}
                                     <div className="flex justify-between items-start">
                                         <div><p className="text-gray-400 text-xs uppercase font-bold tracking-wider">Deuda Total</p><h2 className="text-4xl font-bold mt-1">S/. {saldoTotal.toFixed(2)}</h2></div>
                                         <button onClick={() => setShowPayment(!showPayment)} className="bg-emerald-500 hover:bg-emerald-400 p-3 rounded-xl text-white shadow-lg shadow-emerald-900/40 transition active:scale-95"><IconDollar /></button>
@@ -378,8 +467,8 @@
                                 {/* Historial */}
                                 <Card>
                                     <h3 className="font-bold text-gray-800 mb-4 text-lg border-b pb-2">Movimientos Recientes</h3>
-                                    {historial.length === 0 ? <p className="text-gray-400 text-center text-sm py-4">Sin registros</p> : 
-                                     <div className="space-y-3 max-h-[300px] overflow-y-auto pr-1">{historial.slice(0,20).map(item => (
+                                    {historial.length === 0 ? <p className="text-gray-400 text-center text-sm py-4">Sin registros en la nube</p> : 
+                                     <div className="space-y-3 max-h-[300px] overflow-y-auto pr-1">{historial.map(item => (
                                         <div key={item.id} className="flex justify-between items-center text-sm border-b border-gray-50 pb-3">
                                             <div className="flex-1">
                                                 <div className="font-bold flex items-center gap-2 text-base">
@@ -411,22 +500,16 @@
                             <div className="bg-gray-50 p-4 rounded-xl border border-gray-100">
                                 <h4 className="font-bold text-gray-700 mb-3 flex items-center gap-2"><IconDollar size={16}/> Precios</h4>
                                 <div className="space-y-2">
-                                    <div className="flex justify-between items-center"><label className="text-sm">Empanada</label><input type="number" value={precios.empanada} onChange={e=>setPrecios({...precios, empanada: parseFloat(e.target.value)||0})} className="w-20 font-bold text-right border rounded p-1"/></div>
-                                    <div className="flex justify-between items-center"><label className="text-sm">Papa</label><input type="number" value={precios.papa} onChange={e=>setPrecios({...precios, papa: parseFloat(e.target.value)||0})} className="w-20 font-bold text-right border rounded p-1"/></div>
-                                    <div className="flex justify-between items-center"><label className="text-sm">Rocoto</label><input type="number" value={precios.rocoto} onChange={e=>setPrecios({...precios, rocoto: parseFloat(e.target.value)||0})} className="w-20 font-bold text-right border rounded p-1"/></div>
+                                    <div className="flex justify-between items-center"><label className="text-sm">Empanada</label><input type="number" value={precios.empanada} onChange={e=>guardarPrecios({...precios, empanada: parseFloat(e.target.value)||0})} className="w-20 font-bold text-right border rounded p-1"/></div>
+                                    <div className="flex justify-between items-center"><label className="text-sm">Papa</label><input type="number" value={precios.papa} onChange={e=>guardarPrecios({...precios, papa: parseFloat(e.target.value)||0})} className="w-20 font-bold text-right border rounded p-1"/></div>
+                                    <div className="flex justify-between items-center"><label className="text-sm">Rocoto</label><input type="number" value={precios.rocoto} onChange={e=>guardarPrecios({...precios, rocoto: parseFloat(e.target.value)||0})} className="w-20 font-bold text-right border rounded p-1"/></div>
                                 </div>
                             </div>
                             <div className="space-y-3">
-                                <button onClick={generarRespaldoWhatsApp} className="w-full bg-gray-800 text-white p-3 rounded-lg text-sm font-bold flex items-center justify-center gap-2"><IconShare /> Copia de Seguridad</button>
-                                <button onClick={()=>setShowImport(true)} className="w-full bg-blue-50 text-blue-700 p-3 rounded-lg text-sm font-bold flex items-center justify-center gap-2"><IconUpload /> Restaurar</button>
-                                <button onClick={()=>{if(confirm('¿Borrar TODO?')) {setSaldoTotal(0); setHistorial([]);}}} className="w-full border border-red-100 text-red-500 p-3 rounded-lg text-sm flex items-center justify-center gap-2"><IconTrash /> Resetear</button>
+                                <div className="text-xs text-center text-gray-400 mb-2">☁️ Conectado a la nube. No necesitas copia de seguridad manual.</div>
+                                <button onClick={resetearTodo} className="w-full border border-red-100 text-red-500 p-3 rounded-lg text-sm flex items-center justify-center gap-2"><IconTrash /> Resetear Todo</button>
                             </div>
                         </div>
-                    </Modal>
-
-                    <Modal isOpen={showImport} onClose={()=>setShowImport(false)} title="Restaurar">
-                        <textarea value={importJson} onChange={e=>setImportJson(e.target.value)} className="w-full h-32 border p-2 text-xs" placeholder="Pega el código..."></textarea>
-                        <Button onClick={importarDatos} className="w-full mt-2">Restaurar</Button>
                     </Modal>
                     
                     <Modal isOpen={!!editingItem} onClose={()=>setEditingItem(null)} title="Editar">
