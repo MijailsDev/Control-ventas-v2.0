@@ -25,9 +25,9 @@
     <script src="https://unpkg.com/prop-types/prop-types.min.js"></script>
     <script src="https://unpkg.com/recharts@2.1.12/umd/Recharts.js"></script>
     
-    <!-- 3. LIBRERÍAS PARA PDF -->
+    <!-- 3. LIBRERÍAS PARA PDF (Versiones Estables) -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
     
     <style>
         input[type=number] { -moz-appearance: textfield; }
@@ -93,7 +93,7 @@
             return <button onClick={onClick} className={`flex items-center justify-center font-bold py-3 px-4 rounded-lg transition-all active:scale-95 ${vars[variant]} ${className}`}>{children}</button>;
         };
         
-        // --- INPUT MODIFICADO: NO PERMITE NEGATIVOS ---
+        // --- INPUT: NO PERMITE NEGATIVOS ---
         const NumberInput = ({ label, value, onChange }) => (
             <div className="flex items-center justify-between py-3 border-b border-gray-100 last:border-0">
                 <div className="flex flex-col flex-1">
@@ -108,7 +108,7 @@
                     onChange={(e) => {
                         let val = parseInt(e.target.value);
                         if (isNaN(val)) val = 0;
-                        onChange(Math.abs(val)); // Convierte a positivo siempre
+                        onChange(Math.abs(val));
                     }} 
                     placeholder="0" 
                     className="w-24 bg-gray-50 text-center font-bold text-2xl text-blue-600 rounded-lg py-2 border border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none" 
@@ -261,14 +261,38 @@
             const guardarPrecios = async (newPrecios) => { setPrecios(newPrecios); await db.collection('app').doc('configuracion').set({ precios: newPrecios }, { merge: true }); };
             const resetearTodo = async () => { if(!confirm("⚠️ ¿BORRAR TODO?")) return; const batch = db.batch(); historial.forEach(h => { batch.delete(db.collection('movimientos').doc(h.id.toString())); }); batch.set(db.collection('app').doc('configuracion'), { saldo: 0, precios: precios }, {merge: true}); await batch.commit(); };
 
-            const compartirPDF = async () => {
-                const { jsPDF } = window.jspdf; const doc = new jsPDF();
-                doc.setFontSize(18); doc.text("Historial de Ventas - Reporte", 14, 20); doc.setFontSize(12); doc.text(`Generado el: ${new Date().toLocaleDateString()}`, 14, 28);
-                const tableData = historial.map(h => [ new Date(h.timestamp || h.id).toLocaleDateString() + ' ' + new Date(h.timestamp || h.id).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}), h.tipo === 'venta' ? 'VENTA' : 'PAGO', h.tipo === 'venta' ? `${h.breakdown.empCarne+h.breakdown.empQueso} Emp, ${h.breakdown.papa} Pap, ${h.breakdown.rocoto} Roc` : h.detalle || 'Pago a cuenta', `S/. ${h.monto.toFixed(2)}` ]);
-                doc.autoTable({ head: [['Fecha y Hora', 'Tipo', 'Detalle', 'Monto']], body: tableData, startY: 35, theme: 'grid', headStyles: { fillColor: [5, 150, 105] }, });
-                const fileName = `ventas_${new Date().toISOString().split('T')[0]}.pdf`;
-                if (navigator.canShare && navigator.share) { try { const pdfBlob = doc.output('blob'); const file = new File([pdfBlob], fileName, { type: "application/pdf" }); if(navigator.canShare({ files: [file] })) { await navigator.share({ files: [file], title: 'Reporte de Ventas', text: 'Aquí tienes el historial de ventas en PDF.' }); return; } } catch (e) { console.log("Descargando..."); } }
-                doc.save(fileName);
+            // --- FUNCIÓN PDF SIMPLIFICADA (FIX) ---
+            const compartirPDF = () => {
+                // Verificamos si se cargó la librería
+                if(!window.jspdf) { alert("Error: Librería PDF no cargada."); return; }
+                const { jsPDF } = window.jspdf;
+                const doc = new jsPDF();
+                
+                doc.setFontSize(18); 
+                doc.text("Historial de Ventas - Reporte", 14, 20);
+                doc.setFontSize(12); 
+                doc.text(`Generado el: ${new Date().toLocaleDateString()}`, 14, 28);
+                
+                const tableData = historial.map(h => [
+                    new Date(h.timestamp || h.id).toLocaleDateString() + ' ' + new Date(h.timestamp || h.id).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}),
+                    h.tipo === 'venta' ? 'VENTA' : 'PAGO',
+                    h.tipo === 'venta' 
+                        ? `${h.breakdown.empCarne+h.breakdown.empQueso} Emp, ${h.breakdown.papa} Pap, ${h.breakdown.rocoto} Roc`
+                        : h.detalle || 'Pago a cuenta',
+                    `S/. ${h.monto.toFixed(2)}`
+                ]);
+
+                doc.autoTable({
+                    head: [['Fecha y Hora', 'Tipo', 'Detalle', 'Monto']],
+                    body: tableData,
+                    startY: 35,
+                    theme: 'grid',
+                    headStyles: { fillColor: [5, 150, 105] },
+                });
+
+                // Simplemente descargamos (Android preguntará con qué abrir)
+                doc.save(`ventas_${new Date().toISOString().split('T')[0]}.pdf`);
+                alert("PDF Descargado. Revisa tus notificaciones.");
             };
 
             const guardarVentaPasada = async () => {
@@ -309,7 +333,7 @@
                                     <div className="h-px bg-gray-100 my-2"></div>
                                     <button onClick={openSettings} className="w-full text-left p-3 rounded-xl flex items-center gap-3 font-bold text-gray-600 hover:bg-gray-50"><IconSettings /> Configuración</button>
                                 </nav>
-                                <p className="text-center text-xs text-gray-300">v2.3 Integrity</p>
+                                <p className="text-center text-xs text-gray-300">v2.4 Fix</p>
                             </div>
                         </div>
                     )}
