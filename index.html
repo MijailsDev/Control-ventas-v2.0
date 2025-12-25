@@ -13,11 +13,11 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 
-    <!-- 1. LIBRERÍAS DE FIREBASE (Compat) -->
+    <!-- 1. LIBRERÍAS DE FIREBASE (El motor de la nube) -->
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
 
-    <!-- 2. REACT Y UTILIDADES -->
+    <!-- 2. LIBRERÍAS VISUALES -->
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
@@ -36,9 +36,10 @@
         @keyframes slideIn { from { transform: translateX(-100%); } to { transform: translateX(0); } }
         
         /* Indicador de conexión */
-        .online-badge { position: absolute; top: 1rem; right: 3.5rem; width: 0.5rem; height: 0.5rem; border-radius: 50%; }
-        .online { background-color: #34d399; box-shadow: 0 0 10px #34d399; }
-        .offline { background-color: #ef4444; }
+        .online-badge { width: 8px; height: 8px; border-radius: 50%; box-shadow: 0 0 5px rgba(255,255,255,0.5); }
+        .status-ok { background-color: #34d399; }
+        .status-loading { background-color: #fbbf24; animation: pulse 1s infinite; }
+        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
     </style>
 </head>
 <body class="bg-gray-100 text-gray-800 font-sans select-none overflow-hidden fixed inset-0">
@@ -46,7 +47,7 @@
     <div id="root" class="h-full overflow-y-auto"></div>
 
     <script type="text/babel">
-        // --- 3. INICIALIZACIÓN DE FIREBASE ---
+        // --- 3. CONFIGURACIÓN DE FIREBASE (TUS LLAVES) ---
         const firebaseConfig = {
             apiKey: "AIzaSyDcXlU67WlsDG9SrABEiwCQCsIje78RiBs",
             authDomain: "mis-ventas-19a08.firebaseapp.com",
@@ -56,13 +57,13 @@
             appId: "1:805360347430:web:75552d2a7eeb970881f9e7"
         };
 
-        // Iniciar solo si no existe ya
+        // Iniciar Firebase si no está iniciado
         if (!firebase.apps.length) {
             firebase.initializeApp(firebaseConfig);
         }
         const db = firebase.firestore();
 
-        // --- COMPONENTES REACT ---
+        // --- COMPONENTES ---
         const { useState, useEffect, useMemo } = React;
         const { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Cell } = window.Recharts || {};
 
@@ -174,61 +175,64 @@
         };
 
         function App() {
+            // Estados UI
             const [view, setView] = useState('caja');
             const [isMenuOpen, setIsMenuOpen] = useState(false);
+            const [showPayment, setShowPayment] = useState(false);
+            const [showSettings, setShowSettings] = useState(false);
+            const [editingItem, setEditingItem] = useState(null);
+            
+            // Estados de Datos
             const [empCarne, setEmpCarne] = useState(0);
             const [empQueso, setEmpQueso] = useState(0);
             const [papa, setPapa] = useState(0);
             const [rocoto, setRocoto] = useState(0);
+            const [montoPago, setMontoPago] = useState("");
             
-            // Estados para Firebase
+            // Estados Firebase
             const [saldoTotal, setSaldoTotal] = useState(0);
             const [historial, setHistorial] = useState([]);
             const [precios, setPrecios] = useState({ empanada: 2.50, papa: 2.00, rocoto: 3.50 });
             const [loading, setLoading] = useState(true);
 
-            // UI States
-            const [showPayment, setShowPayment] = useState(false);
-            const [montoPago, setMontoPago] = useState("");
-            const [showSettings, setShowSettings] = useState(false);
-            const [editingItem, setEditingItem] = useState(null);
-
-            // --- SINCRONIZACIÓN FIREBASE ---
+            // --- SINCRONIZACIÓN Y MIGRACIÓN ---
             useEffect(() => {
-                const migrateLocalData = async () => {
+                const checkAndMigrate = async () => {
                     const localSaldo = localStorage.getItem('app_deudas_saldo');
                     const localHist = localStorage.getItem('app_deudas_historial');
                     const localPrecios = localStorage.getItem('app_deudas_precios');
 
+                    // Solo migrar si hay datos locales
                     if (localSaldo && localHist) {
-                        console.log("Migrando datos locales a Firebase...");
-                        // Solo migramos si el documento de configuración no existe en la nube
                         const configRef = db.collection('app').doc('configuracion');
                         const doc = await configRef.get();
                         
+                        // Y si la nube está vacía (evita sobrescribir si ya usas la nube)
                         if (!doc.exists) {
-                            const batch = db.batch();
-                            batch.set(configRef, {
-                                saldo: parseFloat(localSaldo) || 0,
-                                precios: localPrecios ? JSON.parse(localPrecios) : precios
-                            });
-                            
-                            const histArr = JSON.parse(localHist);
-                            histArr.forEach(item => {
-                                const newRef = db.collection('movimientos').doc(item.id.toString());
-                                batch.set(newRef, item);
-                            });
-                            
-                            await batch.commit();
-                            alert("¡Tus datos antiguos se han subido a la nube con éxito! ☁️");
-                            // Limpiamos local para evitar duplicados futuros
-                            localStorage.removeItem('app_deudas_saldo');
-                            localStorage.removeItem('app_deudas_historial');
+                            if(confirm("♻️ Se encontraron datos antiguos en tu celular. ¿Subirlos a la nube ahora?")) {
+                                const batch = db.batch();
+                                batch.set(configRef, {
+                                    saldo: parseFloat(localSaldo) || 0,
+                                    precios: localPrecios ? JSON.parse(localPrecios) : precios
+                                });
+                                
+                                const histArr = JSON.parse(localHist);
+                                histArr.forEach(item => {
+                                    // Usamos el ID como nombre de documento
+                                    const newRef = db.collection('movimientos').doc(item.id.toString());
+                                    batch.set(newRef, item);
+                                });
+                                
+                                await batch.commit();
+                                alert("¡Datos migrados exitosamente! ☁️");
+                                // Opcional: Limpiar local para evitar confusión futura
+                                // localStorage.clear(); 
+                            }
                         }
                     }
                 };
 
-                // 1. Escuchar Configuración (Saldo y Precios)
+                // Suscripciones en tiempo real
                 const unsubConfig = db.collection('app').doc('configuracion')
                     .onSnapshot(doc => {
                         if (doc.exists) {
@@ -236,18 +240,17 @@
                             setSaldoTotal(data.saldo || 0);
                             if(data.precios) setPrecios(data.precios);
                         } else {
-                            // Si no existe, intentar migrar o crear inicial
-                            migrateLocalData();
+                            // Si no existe config, intenta migrar o crea base
+                            checkAndMigrate();
                         }
                         setLoading(false);
                     });
 
-                // 2. Escuchar Historial (Últimos 100)
                 const unsubHist = db.collection('movimientos')
-                    .orderBy('id', 'desc') // Usamos ID que es timestamp
-                    .limit(100)
+                    .orderBy('id', 'desc') // Ordenar por fecha (ID es timestamp)
+                    .limit(300) // Traer últimos 300
                     .onSnapshot(snapshot => {
-                        const list = snapshot.docs.map(doc => doc.data());
+                        const list = snapshot.docs.map(d => d.data());
                         setHistorial(list);
                     });
 
@@ -264,7 +267,7 @@
                 const batch = db.batch();
                 const nuevoId = Date.now();
                 
-                // 1. Crear registro en historial
+                // 1. Guardar movimiento
                 const movRef = db.collection('movimientos').doc(nuevoId.toString());
                 batch.set(movRef, {
                     id: nuevoId,
@@ -274,9 +277,10 @@
                     breakdown: { empCarne, empQueso, papa, rocoto }
                 });
 
-                // 2. Actualizar saldo global
+                // 2. Actualizar saldo global (si no existe lo crea)
                 const configRef = db.collection('app').doc('configuracion');
-                batch.update(configRef, { saldo: saldoTotal + totalDia });
+                // Usamos set con merge para asegurar que existe
+                batch.set(configRef, { saldo: saldoTotal + totalDia }, { merge: true });
 
                 await batch.commit();
                 
@@ -291,7 +295,6 @@
                 const batch = db.batch();
                 const nuevoId = Date.now();
 
-                // 1. Crear registro
                 const movRef = db.collection('movimientos').doc(nuevoId.toString());
                 batch.set(movRef, {
                     id: nuevoId,
@@ -301,9 +304,8 @@
                     detalle: 'Pago a cuenta'
                 });
 
-                // 2. Restar saldo
                 const configRef = db.collection('app').doc('configuracion');
-                batch.update(configRef, { saldo: saldoTotal - val });
+                batch.set(configRef, { saldo: saldoTotal - val }, { merge: true });
 
                 await batch.commit();
 
@@ -328,17 +330,12 @@
                      delete nuevoItem.tempMonto;
                  }
 
-                 // Calculamos la diferencia para ajustar el saldo
                  const diff = nuevoMonto - editingItem.monto;
                  const nuevoSaldo = editingItem.tipo === 'venta' ? saldoTotal + diff : saldoTotal - diff;
 
                  const batch = db.batch();
-                 // Actualizar movimiento
-                 const movRef = db.collection('movimientos').doc(editingItem.id.toString());
-                 batch.update(movRef, nuevoItem);
-                 // Actualizar saldo
-                 const configRef = db.collection('app').doc('configuracion');
-                 batch.update(configRef, { saldo: nuevoSaldo });
+                 batch.update(db.collection('movimientos').doc(editingItem.id.toString()), nuevoItem);
+                 batch.update(db.collection('app').doc('configuracion'), { saldo: nuevoSaldo });
 
                  await batch.commit();
                  setEditingItem(null);
@@ -347,35 +344,30 @@
             const eliminarItem = async () => {
                 if(!confirm("¿Borrar este registro de la nube?")) return;
                 
-                const batch = db.batch();
-                // Ajustar saldo (revertir operación)
                 const nuevoSaldo = editingItem.tipo === 'venta' ? saldoTotal - editingItem.monto : saldoTotal + editingItem.monto;
                 
-                const configRef = db.collection('app').doc('configuracion');
-                batch.update(configRef, { saldo: nuevoSaldo });
-                
-                // Borrar doc
-                const movRef = db.collection('movimientos').doc(editingItem.id.toString());
-                batch.delete(movRef);
+                const batch = db.batch();
+                batch.delete(db.collection('movimientos').doc(editingItem.id.toString()));
+                batch.update(db.collection('app').doc('configuracion'), { saldo: nuevoSaldo });
 
                 await batch.commit();
                 setEditingItem(null);
             };
 
             const guardarPrecios = async (newPrecios) => {
-                setPrecios(newPrecios); // Optimistic UI
-                await db.collection('app').doc('configuracion').update({ precios: newPrecios });
+                setPrecios(newPrecios); // Optimistic
+                await db.collection('app').doc('configuracion').set({ precios: newPrecios }, { merge: true });
             };
 
             const resetearTodo = async () => {
-                if(!confirm("⚠️ ¿BORRAR TODO? Esto eliminará todos los datos de la nube permanentemente.")) return;
-                
-                // Borrar coleccion es dificil desde cliente, reseteamos saldo y borramos uno a uno los recientes
+                if(!confirm("⚠️ ¿BORRAR TODO? Se eliminarán los datos de la nube.")) return;
                 const batch = db.batch();
+                // Borrar historial visible
                 historial.forEach(h => {
                     batch.delete(db.collection('movimientos').doc(h.id.toString()));
                 });
-                batch.set(db.collection('app').doc('configuracion'), { saldo: 0, precios: precios }); // Reset saldo
+                // Reset saldo
+                batch.set(db.collection('app').doc('configuracion'), { saldo: 0, precios: precios });
                 await batch.commit();
             };
 
@@ -399,8 +391,8 @@
                         <h1 className="text-xl font-bold flex items-center gap-2">
                             <IconCalc/> Control Ventas
                         </h1>
-                        <div className="relative">
-                            <div className={`online-badge ${loading ? 'bg-yellow-400' : 'online'}`}></div>
+                        <div className="relative" title={loading ? "Conectando..." : "Conectado"}>
+                            <div className={`online-badge ${loading ? 'status-loading' : 'status-ok'}`}></div>
                         </div>
                     </div>
 
@@ -430,9 +422,9 @@
                     <div className="p-4 space-y-4">
                         {view === 'caja' && (
                             <div className="space-y-4 fade-in">
-                                {/* Tarjeta Deuda */}
+                                {/* Tarjeta Deuda (Dark) */}
                                 <div className="bg-gray-800 rounded-xl shadow-md p-4 text-white border-l-4 border-emerald-400 shadow-xl relative overflow-hidden">
-                                    {loading && <div className="absolute inset-0 bg-black/50 flex items-center justify-center backdrop-blur-sm z-10"><span className="text-sm font-bold animate-pulse">Sincronizando...</span></div>}
+                                    {loading && <div className="absolute inset-0 bg-black/50 flex items-center justify-center backdrop-blur-sm z-10"><span className="text-xs font-bold animate-pulse text-white">Sincronizando...</span></div>}
                                     <div className="flex justify-between items-start">
                                         <div><p className="text-gray-400 text-xs uppercase font-bold tracking-wider">Deuda Total</p><h2 className="text-4xl font-bold mt-1">S/. {saldoTotal.toFixed(2)}</h2></div>
                                         <button onClick={() => setShowPayment(!showPayment)} className="bg-emerald-500 hover:bg-emerald-400 p-3 rounded-xl text-white shadow-lg shadow-emerald-900/40 transition active:scale-95"><IconDollar /></button>
@@ -506,8 +498,8 @@
                                 </div>
                             </div>
                             <div className="space-y-3">
-                                <div className="text-xs text-center text-gray-400 mb-2">☁️ Conectado a la nube. No necesitas copia de seguridad manual.</div>
-                                <button onClick={resetearTodo} className="w-full border border-red-100 text-red-500 p-3 rounded-lg text-sm flex items-center justify-center gap-2"><IconTrash /> Resetear Todo</button>
+                                <div className="text-xs text-center text-gray-400 mb-2 bg-gray-100 p-2 rounded">☁️ Conectado a Firebase. <br/>Tus datos están seguros en Google.</div>
+                                <button onClick={resetearTodo} className="w-full border border-red-100 text-red-500 p-3 rounded-lg text-sm flex items-center justify-center gap-2"><IconTrash /> Resetear Todo (Nube)</button>
                             </div>
                         </div>
                     </Modal>
