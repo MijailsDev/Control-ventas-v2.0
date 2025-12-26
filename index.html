@@ -93,7 +93,6 @@
             return <button onClick={onClick} className={`flex items-center justify-center font-bold py-3 px-4 rounded-lg transition-all active:scale-95 ${vars[variant]} ${className}`}>{children}</button>;
         };
         
-        // --- INPUT: NO PERMITE NEGATIVOS ---
         const NumberInput = ({ label, value, onChange }) => (
             <div className="flex items-center justify-between py-3 border-b border-gray-100 last:border-0">
                 <div className="flex flex-col flex-1">
@@ -185,6 +184,31 @@
             const [montoPago, setMontoPago] = useState(""); const [saldoTotal, setSaldoTotal] = useState(0); const [historial, setHistorial] = useState([]);
             const [precios, setPrecios] = useState({ empanada: 2.50, papa: 2.00, rocoto: 3.50 }); const [loading, setLoading] = useState(true);
 
+            // CALCULO DE SALDO AYER (NUEVO)
+            const saldoAyer = useMemo(() => {
+                // Obtenemos la fecha de hoy "string" para comparar (sin horas)
+                const todayStr = new Date().toLocaleDateString('es-PE');
+                
+                // Filtramos movimientos que ocurrieron HOY
+                const movimientosHoy = historial.filter(h => {
+                    const fechaMov = new Date(h.timestamp || h.id).toLocaleDateString('es-PE');
+                    return fechaMov === todayStr;
+                });
+
+                // Sumamos ventas y pagos de hoy
+                const ventasHoy = movimientosHoy
+                    .filter(h => h.tipo === 'venta')
+                    .reduce((acc, h) => acc + h.monto, 0);
+                
+                const pagosHoy = movimientosHoy
+                    .filter(h => h.tipo === 'pago')
+                    .reduce((acc, h) => acc + h.monto, 0);
+
+                // Formula: SaldoActual - (Lo que sumó hoy) + (Lo que restó hoy)
+                // SaldoAyer = SaldoTotal - VentasHoy + PagosHoy
+                return saldoTotal - ventasHoy + pagosHoy;
+            }, [saldoTotal, historial]);
+
             useEffect(() => {
                 const checkAuth = async () => {
                     const isSessionActive = localStorage.getItem('app_unlocked') === 'true';
@@ -265,7 +289,6 @@
             const guardarPrecios = async (newPrecios) => { setPrecios(newPrecios); await db.collection('app').doc('configuracion').set({ precios: newPrecios }, { merge: true }); };
             const resetearTodo = async () => { if(!confirm("⚠️ ¿BORRAR TODO?")) return; const batch = db.batch(); historial.forEach(h => { batch.delete(db.collection('movimientos').doc(h.id.toString())); }); batch.set(db.collection('app').doc('configuracion'), { saldo: 0, precios: precios }, {merge: true}); await batch.commit(); };
 
-            // --- FUNCIÓN PDF SIMPLIFICADA (FIX) ---
             const compartirPDF = () => {
                 if(!window.jspdf) { alert("Error: Librería PDF no cargada."); return; }
                 const { jsPDF } = window.jspdf;
@@ -373,7 +396,7 @@
                                     <div className="h-px bg-gray-100 my-2"></div>
                                     <button onClick={openSettings} className="w-full text-left p-3 rounded-xl flex items-center gap-3 font-bold text-gray-600 hover:bg-gray-50"><IconSettings /> Configuración</button>
                                 </nav>
-                                <p className="text-center text-xs text-gray-300">v2.5 Full</p>
+                                <p className="text-center text-xs text-gray-300">v2.6 Dashboard</p>
                             </div>
                         </div>
                     )}
@@ -384,7 +407,11 @@
                                 <div className="bg-gray-800 rounded-xl shadow-md p-4 text-white border-l-4 border-emerald-400 shadow-xl relative overflow-hidden">
                                     {loading && <div className="absolute inset-0 bg-black/50 flex items-center justify-center backdrop-blur-sm z-10"><span className="text-xs font-bold animate-pulse text-white">Sincronizando...</span></div>}
                                     <div className="flex justify-between items-start">
-                                        <div><p className="text-gray-400 text-xs uppercase font-bold tracking-wider">Deuda Total</p><h2 className="text-4xl font-bold mt-1">S/. {saldoTotal.toFixed(2)}</h2></div>
+                                        <div>
+                                            <p className="text-gray-400 text-xs font-medium mb-1">Saldo Ayer: S/. {saldoAyer.toFixed(2)}</p>
+                                            <p className="text-gray-300 text-xs uppercase font-bold tracking-wider">Deuda Total</p>
+                                            <h2 className="text-4xl font-bold mt-1">S/. {saldoTotal.toFixed(2)}</h2>
+                                        </div>
                                         <button onClick={() => setShowPayment(!showPayment)} className="bg-emerald-500 hover:bg-emerald-400 p-3 rounded-xl text-white shadow-lg shadow-emerald-900/40 transition active:scale-95"><IconDollar /></button>
                                     </div>
                                     {showPayment && (
