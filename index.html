@@ -25,7 +25,7 @@
     <script src="https://unpkg.com/prop-types/prop-types.min.js"></script>
     <script src="https://unpkg.com/recharts@2.1.12/umd/Recharts.js"></script>
     
-    <!-- 3. LIBRERÍAS PARA PDF (Versiones Estables) -->
+    <!-- 3. LIBRERÍAS PARA PDF -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
     
@@ -176,7 +176,11 @@
             const [isLocked, setIsLocked] = useState(true); const [setupMode, setSetupMode] = useState(false); const [view, setView] = useState('caja');
             const [isMenuOpen, setIsMenuOpen] = useState(false); const [showPayment, setShowPayment] = useState(false); const [showSettings, setShowSettings] = useState(false);
             const [editingItem, setEditingItem] = useState(null); const [showPastSale, setShowPastSale] = useState(false);
-            const [pastDate, setPastDate] = useState(""); const [pastInputs, setPastInputs] = useState({ empCarne: 0, empQueso: 0, papa: 0, rocoto: 0 });
+            const [pastDate, setPastDate] = useState(""); 
+            const [pastInputs, setPastInputs] = useState({ empCarne: 0, empQueso: 0, papa: 0, rocoto: 0 });
+            const [pastType, setPastType] = useState('venta'); // 'venta' | 'pago'
+            const [pastMonto, setPastMonto] = useState(""); // Monto para el pago pasado
+
             const [empCarne, setEmpCarne] = useState(0); const [empQueso, setEmpQueso] = useState(0); const [papa, setPapa] = useState(0); const [rocoto, setRocoto] = useState(0);
             const [montoPago, setMontoPago] = useState(""); const [saldoTotal, setSaldoTotal] = useState(0); const [historial, setHistorial] = useState([]);
             const [precios, setPrecios] = useState({ empanada: 2.50, papa: 2.00, rocoto: 3.50 }); const [loading, setLoading] = useState(true);
@@ -263,7 +267,6 @@
 
             // --- FUNCIÓN PDF SIMPLIFICADA (FIX) ---
             const compartirPDF = () => {
-                // Verificamos si se cargó la librería
                 if(!window.jspdf) { alert("Error: Librería PDF no cargada."); return; }
                 const { jsPDF } = window.jspdf;
                 const doc = new jsPDF();
@@ -290,20 +293,57 @@
                     headStyles: { fillColor: [5, 150, 105] },
                 });
 
-                // Simplemente descargamos (Android preguntará con qué abrir)
                 doc.save(`ventas_${new Date().toISOString().split('T')[0]}.pdf`);
                 alert("PDF Descargado. Revisa tus notificaciones.");
             };
 
-            const guardarVentaPasada = async () => {
+            const guardarRegistroPasado = async () => {
                 if(!pastDate) { alert("Selecciona una fecha"); return; }
-                const { empCarne, empQueso, papa, rocoto } = pastInputs; const total = calcularTotalVenta(empCarne, empQueso, papa, rocoto);
-                if (total === 0) { alert("Agrega al menos un producto"); return; }
-                const [y, m, d] = pastDate.split('-'); const fechaRegistro = new Date(y, m-1, d, 12, 0, 0); const nuevoId = fechaRegistro.getTime();
-                const batch = db.batch(); const movRef = db.collection('movimientos').doc(nuevoId.toString());
-                batch.set(movRef, { id: nuevoId, tipo: 'venta', monto: total, timestamp: nuevoId, breakdown: { ...pastInputs } });
-                const configRef = db.collection('app').doc('configuracion'); batch.set(configRef, { saldo: saldoTotal + total }, { merge: true });
-                await batch.commit(); alert("¡Venta guardada!"); setPastInputs({ empCarne: 0, empQueso: 0, papa: 0, rocoto: 0 }); setPastDate(""); setShowPastSale(false);
+                
+                const [y, m, d] = pastDate.split('-');
+                const fechaRegistro = new Date(y, m-1, d, 12, 0, 0); // Mediodía
+                const nuevoId = fechaRegistro.getTime();
+                
+                const batch = db.batch();
+                const movRef = db.collection('movimientos').doc(nuevoId.toString());
+                const configRef = db.collection('app').doc('configuracion');
+
+                if (pastType === 'venta') {
+                    const { empCarne, empQueso, papa, rocoto } = pastInputs;
+                    const total = calcularTotalVenta(empCarne, empQueso, papa, rocoto);
+                    if (total === 0) { alert("Agrega al menos un producto"); return; }
+
+                    batch.set(movRef, {
+                        id: nuevoId,
+                        tipo: 'venta',
+                        monto: total,
+                        timestamp: nuevoId,
+                        breakdown: { ...pastInputs }
+                    });
+                    batch.set(configRef, { saldo: saldoTotal + total }, { merge: true });
+                    alert("¡Venta del pasado guardada!");
+                } else {
+                    // PAGO
+                    const val = parseFloat(pastMonto);
+                    if (!val || val <= 0) { alert("Ingresa un monto válido"); return; }
+
+                    batch.set(movRef, {
+                        id: nuevoId,
+                        tipo: 'pago',
+                        monto: val,
+                        timestamp: nuevoId,
+                        detalle: 'Pago a cuenta (Pasado)'
+                    });
+                    batch.set(configRef, { saldo: saldoTotal - val }, { merge: true });
+                    alert("¡Pago del pasado guardado!");
+                }
+
+                await batch.commit();
+                // Reset
+                setPastInputs({ empCarne: 0, empQueso: 0, papa: 0, rocoto: 0 });
+                setPastMonto("");
+                setPastDate("");
+                setShowPastSale(false);
             };
 
             const formatearFecha = (ts) => { const d = new Date(ts); return `${d.toLocaleDateString('es-PE', {weekday:'short'})}, ${d.toLocaleDateString('es-PE', {day:'2-digit', month:'short'})}`; };
@@ -333,7 +373,7 @@
                                     <div className="h-px bg-gray-100 my-2"></div>
                                     <button onClick={openSettings} className="w-full text-left p-3 rounded-xl flex items-center gap-3 font-bold text-gray-600 hover:bg-gray-50"><IconSettings /> Configuración</button>
                                 </nav>
-                                <p className="text-center text-xs text-gray-300">v2.4 Fix</p>
+                                <p className="text-center text-xs text-gray-300">v2.5 Full</p>
                             </div>
                         </div>
                     )}
@@ -413,17 +453,34 @@
                         {view === 'stats' && <StatsView historial={historial} />}
                     </div>
 
-                    <Modal isOpen={showPastSale} onClose={()=>setShowPastSale(false)} title="Agregar Venta Pasada">
+                    <Modal isOpen={showPastSale} onClose={()=>setShowPastSale(false)} title="Registrar en el Pasado">
                         <div className="space-y-4">
-                            <div className="bg-yellow-50 p-3 rounded-lg border border-yellow-200 text-sm text-yellow-800">📅 Selecciona la fecha del cuaderno para agregarla al historial.</div>
-                            <div className="flex flex-col"><label className="font-bold text-gray-600 mb-1">Fecha de la venta:</label><input type="date" value={pastDate} onChange={e=>setPastDate(e.target.value)} className="p-3 border rounded-lg bg-white font-bold text-lg" /></div>
-                            <div className="space-y-1 pt-2 border-t">
-                                <NumberInput label="Emp. Carne" value={pastInputs.empCarne} onChange={v=>setPastInputs({...pastInputs, empCarne:v})} />
-                                <NumberInput label="Emp. Queso" value={pastInputs.empQueso} onChange={v=>setPastInputs({...pastInputs, empQueso:v})} />
-                                <NumberInput label="Papa Reb." value={pastInputs.papa} onChange={v=>setPastInputs({...pastInputs, papa:v})} />
-                                <NumberInput label="Rocoto Rell." value={pastInputs.rocoto} onChange={v=>setPastInputs({...pastInputs, rocoto:v})} />
+                            <div className="flex flex-col">
+                                <label className="font-bold text-gray-600 mb-1">Fecha:</label>
+                                <input type="date" value={pastDate} onChange={e=>setPastDate(e.target.value)} className="p-3 border rounded-lg bg-white font-bold text-lg" />
                             </div>
-                            <div className="pt-4"><Button onClick={guardarVentaPasada} className="w-full">Guardar en el Historial</Button></div>
+
+                            {/* SELECTOR TIPO */}
+                            <div className="flex bg-gray-100 p-1 rounded-lg">
+                                <button onClick={()=>setPastType('venta')} className={`flex-1 py-2 rounded-md text-sm font-bold transition ${pastType==='venta' ? 'bg-white text-emerald-600 shadow' : 'text-gray-500'}`}>Venta</button>
+                                <button onClick={()=>setPastType('pago')} className={`flex-1 py-2 rounded-md text-sm font-bold transition ${pastType==='pago' ? 'bg-white text-blue-600 shadow' : 'text-gray-500'}`}>Pago</button>
+                            </div>
+
+                            {pastType === 'venta' ? (
+                                <div className="space-y-1 pt-2 border-t">
+                                    <NumberInput label="Emp. Carne" value={pastInputs.empCarne} onChange={v=>setPastInputs({...pastInputs, empCarne:v})} />
+                                    <NumberInput label="Emp. Queso" value={pastInputs.empQueso} onChange={v=>setPastInputs({...pastInputs, empQueso:v})} />
+                                    <NumberInput label="Papa Reb." value={pastInputs.papa} onChange={v=>setPastInputs({...pastInputs, papa:v})} />
+                                    <NumberInput label="Rocoto Rell." value={pastInputs.rocoto} onChange={v=>setPastInputs({...pastInputs, rocoto:v})} />
+                                </div>
+                            ) : (
+                                <div className="pt-4">
+                                    <label className="text-sm text-gray-500 font-bold block mb-1">Monto del Pago</label>
+                                    <input type="number" value={pastMonto} onChange={e=>setPastMonto(e.target.value)} placeholder="0.00" className="border w-full p-3 rounded-lg font-bold text-2xl text-center outline-none focus:ring-2 focus:ring-emerald-500"/>
+                                </div>
+                            )}
+
+                            <div className="pt-4"><Button onClick={guardarRegistroPasado} className="w-full">Guardar Registro</Button></div>
                         </div>
                     </Modal>
 
