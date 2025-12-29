@@ -94,6 +94,7 @@
             return <button onClick={onClick} className={`flex items-center justify-center font-bold py-3 px-4 rounded-lg transition-all active:scale-95 ${vars[variant]} ${className}`}>{children}</button>;
         };
         
+        // --- INPUT: NO PERMITE NEGATIVOS ---
         const NumberInput = ({ label, value, onChange }) => (
             <div className="flex items-center justify-between py-3 border-b border-gray-100 last:border-0">
                 <div className="flex flex-col flex-1">
@@ -291,6 +292,7 @@
             // No reseteamos saldo en config, porque ya no usamos esa variable
             await batch.commit(); };
 
+            // --- PDF DETALLADO CON DIAS DE LA SEMANA ---
             const compartirPDF = () => {
                 if(!window.jspdf) { alert("Error: Librería PDF no cargada."); return; }
                 const { jsPDF } = window.jspdf;
@@ -301,25 +303,62 @@
                 doc.setFontSize(12); 
                 doc.text(`Generado el: ${new Date().toLocaleDateString()}`, 14, 28);
                 
-                const tableData = historial.map(h => [
-                    new Date(h.timestamp || h.id).toLocaleDateString() + ' ' + new Date(h.timestamp || h.id).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}),
-                    h.tipo === 'venta' ? 'VENTA' : 'PAGO',
-                    h.tipo === 'venta' 
-                        ? `${h.breakdown.empCarne+h.breakdown.empQueso} Emp, ${h.breakdown.papa} Pap, ${h.breakdown.rocoto} Roc`
-                        : h.detalle || 'Pago a cuenta',
-                    `S/. ${h.monto.toFixed(2)}`
-                ]);
+                const tableData = historial.map(h => {
+                    const d = new Date(h.timestamp || h.id);
+                    // Formato: "Lun, 28/12/25 14:30"
+                    const fecha = d.toLocaleDateString('es-PE', { weekday: 'short', day: '2-digit', month: '2-digit', year: '2-digit' }) + ' ' + d.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+                    // Capitalizar primera letra (lun -> Lun)
+                    const fechaCap = fecha.charAt(0).toUpperCase() + fecha.slice(1);
+                    
+                    if (h.tipo === 'venta') {
+                        return [
+                            fechaCap,
+                            'VENTA',
+                            h.breakdown.empCarne.toString(),
+                            h.breakdown.empQueso.toString(),
+                            h.breakdown.papa.toString(),
+                            h.breakdown.rocoto.toString(),
+                            `S/. ${h.monto.toFixed(2)}`
+                        ];
+                    } else {
+                        return [
+                            fechaCap,
+                            'PAGO',
+                            '-', '-', '-', '-',
+                            `S/. ${h.monto.toFixed(2)}`
+                        ];
+                    }
+                });
 
                 doc.autoTable({
-                    head: [['Fecha y Hora', 'Tipo', 'Detalle', 'Monto']],
+                    head: [['Fecha', 'Tipo', 'Carne', 'Queso', 'Papa', 'Rocoto', 'Total']],
                     body: tableData,
                     startY: 35,
                     theme: 'grid',
                     headStyles: { fillColor: [5, 150, 105] },
+                    styles: { fontSize: 8, cellPadding: 2 },
+                    columnStyles: {
+                        0: { cellWidth: 35 }, 
+                        1: { cellWidth: 20 },
+                        2: { halign: 'center' },
+                        3: { halign: 'center' },
+                        4: { halign: 'center' },
+                        5: { halign: 'center' },
+                        6: { halign: 'right' }
+                    }
                 });
 
                 doc.save(`ventas_${new Date().toISOString().split('T')[0]}.pdf`);
                 alert("PDF Descargado. Revisa tus notificaciones.");
+            };
+
+            // --- FORMATO DE FECHA VISUAL MEJORADO (APP) ---
+            const formatearFecha = (ts) => {
+                const d = new Date(ts);
+                const options = { weekday: 'short', day: '2-digit', month: 'short' };
+                let str = d.toLocaleDateString('es-PE', options);
+                // Capitalizar primera letra: "lun, 28 dic" -> "Lun, 28 dic"
+                return str.charAt(0).toUpperCase() + str.slice(1);
             };
 
             const guardarRegistroPasado = async () => {
@@ -390,7 +429,6 @@
                 );
             };
 
-            const formatearFecha = (ts) => { const d = new Date(ts); return `${d.toLocaleDateString('es-PE', {weekday:'short'})}, ${d.toLocaleDateString('es-PE', {day:'2-digit', month:'short'})}`; };
             const toggleMenu = () => setIsMenuOpen(!isMenuOpen); const switchView = (v) => { setView(v); setIsMenuOpen(false); }; const openSettings = () => { setShowSettings(true); setIsMenuOpen(false); };
 
             if (isLocked) return <LockScreen onUnlock={handleUnlock} isSettingUp={setupMode} />;
@@ -417,7 +455,7 @@
                                     <div className="h-px bg-gray-100 my-2"></div>
                                     <button onClick={openSettings} className="w-full text-left p-3 rounded-xl flex items-center gap-3 font-bold text-gray-600 hover:bg-gray-50"><IconSettings /> Configuración</button>
                                 </nav>
-                                <p className="text-center text-xs text-gray-300">v3.0 Integrity</p>
+                                <p className="text-center text-xs text-gray-300">v3.1 Days</p>
                             </div>
                         </div>
                     )}
