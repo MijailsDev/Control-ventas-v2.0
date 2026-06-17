@@ -20,7 +20,8 @@
     <!-- 2. LIBRERÍAS VISUALES Y UTILIDADES -->
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <!-- ¡AQUÍ ESTÁ LA SOLUCIÓN! Babel congelado en la versión 7.21.0 (Método Clásico) -->
+    <script src="https://unpkg.com/@babel/standalone@7.21.0/babel.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/prop-types/prop-types.min.js"></script>
     <script src="https://unpkg.com/recharts@2.1.12/umd/Recharts.js"></script>
@@ -56,11 +57,8 @@
         </div>
     </div>
 
-    <!-- NOTA IMPORTANTE: Se añadieron pragmas y data-presets para evitar el error de import -->
-    <script type="text/babel" data-presets="env,react">
-        /** @jsx React.createElement */
-        /** @jsxFrag React.Fragment */
-
+    <!-- Script de React normal sin atributos conflictivos -->
+    <script type="text/babel">
         // --- ESCUDO ANTI-ERRORES DE REACT ---
         class ErrorBoundary extends React.Component {
             constructor(props) { super(props); this.state = { hasError: false, errorInfo: null }; }
