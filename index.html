@@ -46,9 +46,37 @@
 </head>
 <body class="bg-gray-100 text-gray-800 font-sans select-none overflow-hidden fixed inset-0">
 
-    <div id="root" class="h-full overflow-y-auto"></div>
+    <!-- MENSAJE ANTIPANTALLA BLANCA (Se borra cuando React carga) -->
+    <div id="root" class="h-full overflow-y-auto">
+        <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; text-align: center; padding: 20px;">
+            <div style="width: 50px; height: 50px; border: 4px solid #d1fae5; border-top: 4px solid #059669; border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 20px;"></div>
+            <h2 style="color: #059669; font-family: sans-serif; margin-bottom: 10px;">Cargando tu negocio...</h2>
+            <p style="color: #6b7280; font-family: sans-serif; font-size: 14px; max-width: 300px;">Si esta pantalla no desaparece en unos segundos, revisa tu conexión a Internet, cierra la app por completo y vuelve a abrirla.</p>
+            <style>@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }</style>
+        </div>
+    </div>
 
     <script type="text/babel">
+        // --- ESCUDO ANTI-ERRORES DE REACT ---
+        class ErrorBoundary extends React.Component {
+            constructor(props) { super(props); this.state = { hasError: false, errorInfo: null }; }
+            static getDerivedStateFromError(error) { return { hasError: true }; }
+            componentDidCatch(error, errorInfo) { console.error("Error atrapado:", error, errorInfo); this.setState({ errorInfo: error.toString() }); }
+            render() {
+                if (this.state.hasError) {
+                    return (
+                        <div className="flex flex-col items-center justify-center h-screen bg-red-50 p-6 text-center">
+                            <h2 className="text-2xl font-bold text-red-600 mb-4">¡Ups! Algo se atascó</h2>
+                            <p className="text-gray-700 mb-6 text-sm">Ocurrió un error inesperado al leer los datos. No te preocupes, tu información está en la nube.</p>
+                            <p className="text-xs text-red-400 mb-8 bg-red-100 p-2 rounded">{this.state.errorInfo}</p>
+                            <button onClick={() => { localStorage.clear(); window.location.reload(); }} className="bg-red-600 text-white font-bold py-3 px-6 rounded-lg shadow-lg active:scale-95">Auto-Reparar App</button>
+                        </div>
+                    );
+                }
+                return this.props.children; 
+            }
+        }
+
         // --- CONFIGURACIÓN DE FIREBASE ---
         const firebaseConfig = {
             apiKey: "AIzaSyDcXlU67WlsDG9SrABEiwCQCsIje78RiBs",
@@ -94,7 +122,6 @@
             return <button onClick={onClick} className={`flex items-center justify-center font-bold py-3 px-4 rounded-lg transition-all active:scale-95 ${vars[variant]} ${className}`}>{children}</button>;
         };
         
-        // --- INPUT: NO PERMITE NEGATIVOS ---
         const NumberInput = ({ label, value, onChange }) => (
             <div className="flex items-center justify-between py-3 border-b border-gray-100 last:border-0">
                 <div className="flex flex-col flex-1">
@@ -179,16 +206,14 @@
             const [editingItem, setEditingItem] = useState(null); const [showPastSale, setShowPastSale] = useState(false);
             const [pastDate, setPastDate] = useState(""); 
             const [pastInputs, setPastInputs] = useState({ empCarne: 0, empQueso: 0, papa: 0, rocoto: 0 });
-            const [pastType, setPastType] = useState('venta'); // 'venta' | 'pago'
-            const [pastMonto, setPastMonto] = useState(""); // Monto para el pago pasado
+            const [pastType, setPastType] = useState('venta'); 
+            const [pastMonto, setPastMonto] = useState(""); 
 
             const [empCarne, setEmpCarne] = useState(0); const [empQueso, setEmpQueso] = useState(0); const [papa, setPapa] = useState(0); const [rocoto, setRocoto] = useState(0);
             const [montoPago, setMontoPago] = useState(""); 
             const [historial, setHistorial] = useState([]);
             const [precios, setPrecios] = useState({ empanada: 2.50, papa: 2.00, rocoto: 3.50 }); const [loading, setLoading] = useState(true);
 
-            // --- CÁLCULO DE SALDO TOTAL (FIABLE) ---
-            // Sumamos TODO el historial cargado. Venta suma, Pago resta.
             const saldoTotal = useMemo(() => {
                 return historial.reduce((total, item) => {
                     if (item.tipo === 'venta') return total + item.monto;
@@ -197,7 +222,6 @@
                 }, 0);
             }, [historial]);
 
-            // CALCULO DE SALDO AYER
             const saldoAyer = useMemo(() => {
                 const todayStr = new Date().toLocaleDateString('es-PE');
                 const movimientosHoy = historial.filter(h => {
@@ -211,14 +235,20 @@
 
             useEffect(() => {
                 const checkAuth = async () => {
-                    const isSessionActive = localStorage.getItem('app_unlocked') === 'true';
-                    const doc = await db.collection('app').doc('configuracion').get();
-                    if (!doc.exists || !doc.data().pin) { setSetupMode(true); setIsLocked(true); } 
-                    else if (isSessionActive) { setIsLocked(false); } 
-                    else { setIsLocked(true); }
+                    try {
+                        const isSessionActive = localStorage.getItem('app_unlocked') === 'true';
+                        const doc = await db.collection('app').doc('configuracion').get();
+                        if (!doc.exists || !doc.data().pin) { setSetupMode(true); setIsLocked(true); } 
+                        else if (isSessionActive) { setIsLocked(false); } 
+                        else { setIsLocked(true); }
+                    } catch(e) {
+                        console.error("Error al autenticar", e);
+                        // Si falla la conexión inicial, seguimos mostrando cargando o error
+                    }
                 };
                 checkAuth();
             }, []);
+            
             useEffect(() => { if(!isLocked) initData(); }, [isLocked]);
 
             const handleUnlock = async (inputPin) => {
@@ -230,23 +260,38 @@
 
             const initData = () => {
                 const migrateLocalData = async () => {
-                    const localHist = localStorage.getItem('app_deudas_historial'); const localPrecios = localStorage.getItem('app_deudas_precios');
-                    if (localHist) {
-                        const configRef = db.collection('app').doc('configuracion'); const doc = await configRef.get();
-                        // Solo migrar si la nube parece vacía o no tiene precios
-                        if (!doc.exists || !doc.data().precios) { 
-                            if(confirm("♻️ Se encontraron datos antiguos. ¿Subirlos a la nube?")) {
-                                const batch = db.batch(); batch.set(configRef, { precios: localPrecios ? JSON.parse(localPrecios) : precios }, {merge: true});
-                                const histArr = JSON.parse(localHist); histArr.forEach(item => { const newRef = db.collection('movimientos').doc(item.id.toString()); batch.set(newRef, item); });
-                                await batch.commit(); alert("¡Datos migrados! ☁️");
+                    try {
+                        const localHist = localStorage.getItem('app_deudas_historial'); 
+                        const localPrecios = localStorage.getItem('app_deudas_precios');
+                        if (localHist) {
+                            const configRef = db.collection('app').doc('configuracion'); const doc = await configRef.get();
+                            if (!doc.exists || !doc.data().precios) { 
+                                if(confirm("♻️ Se encontraron datos antiguos. ¿Subirlos a la nube?")) {
+                                    const batch = db.batch(); batch.set(configRef, { precios: localPrecios ? JSON.parse(localPrecios) : precios }, {merge: true});
+                                    const histArr = JSON.parse(localHist); histArr.forEach(item => { const newRef = db.collection('movimientos').doc(item.id.toString()); batch.set(newRef, item); });
+                                    await batch.commit(); alert("¡Datos migrados! ☁️");
+                                }
                             }
                         }
-                    }
+                    } catch(e) { console.error("Error migrando datos locales:", e); }
                 };
-                const unsubConfig = db.collection('app').doc('configuracion').onSnapshot(doc => { if (doc.exists) { const data = doc.data(); if(data.precios) setPrecios(data.precios); } else { migrateLocalData(); } setLoading(false); });
                 
-                // CARGAMOS HASTA 5000 REGISTROS PARA ASEGURAR SALDO CORRECTO
-                const unsubHist = db.collection('movimientos').orderBy('id', 'desc').limit(5000).onSnapshot(snapshot => { const list = snapshot.docs.map(d => d.data()); setHistorial(list); });
+                const unsubConfig = db.collection('app').doc('configuracion').onSnapshot(doc => { 
+                    if (doc.exists) { 
+                        const data = doc.data(); 
+                        if(data.precios) setPrecios(data.precios); 
+                    } else { migrateLocalData(); } 
+                    setLoading(false); 
+                }, error => {
+                    console.error("Error fetching config:", error);
+                    setLoading(false);
+                });
+                
+                const unsubHist = db.collection('movimientos').orderBy('id', 'desc').limit(5000).onSnapshot(snapshot => { 
+                    const list = snapshot.docs.map(d => d.data()); setHistorial(list); 
+                }, error => {
+                    console.error("Error fetching history:", error);
+                });
                 return () => { unsubConfig(); unsubHist(); };
             };
 
@@ -257,7 +302,6 @@
                 if (totalDia === 0) return;
                 const batch = db.batch(); const nuevoId = Date.now(); const movRef = db.collection('movimientos').doc(nuevoId.toString());
                 batch.set(movRef, { id: nuevoId, tipo: 'venta', monto: totalDia, timestamp: nuevoId, breakdown: { empCarne, empQueso, papa, rocoto } });
-                // YA NO ACTUALIZAMOS SALDO MANUALMENTE, SE CALCULA SOLO
                 await batch.commit(); setEmpCarne(0); setEmpQueso(0); setPapa(0); setRocoto(0); if (navigator.vibrate) navigator.vibrate(50);
             };
 
@@ -289,12 +333,10 @@
 
             const guardarPrecios = async (newPrecios) => { setPrecios(newPrecios); await db.collection('app').doc('configuracion').set({ precios: newPrecios }, { merge: true }); };
             const resetearTodo = async () => { if(!confirm("⚠️ ¿BORRAR TODO?")) return; const batch = db.batch(); historial.forEach(h => { batch.delete(db.collection('movimientos').doc(h.id.toString())); }); 
-            // No reseteamos saldo en config, porque ya no usamos esa variable
             await batch.commit(); };
 
-            // --- PDF DETALLADO CON DIAS DE LA SEMANA ---
             const compartirPDF = () => {
-                if(!window.jspdf) { alert("Error: Librería PDF no cargada."); return; }
+                if(!window.jspdf) { alert("Error: Librería PDF no cargada. Revisa tu internet."); return; }
                 const { jsPDF } = window.jspdf;
                 const doc = new jsPDF();
                 
@@ -305,28 +347,20 @@
                 
                 const tableData = historial.map(h => {
                     const d = new Date(h.timestamp || h.id);
-                    // Formato: "Lun, 28/12/25 14:30"
                     const fecha = d.toLocaleDateString('es-PE', { weekday: 'short', day: '2-digit', month: '2-digit', year: '2-digit' }) + ' ' + d.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-                    // Capitalizar primera letra (lun -> Lun)
                     const fechaCap = fecha.charAt(0).toUpperCase() + fecha.slice(1);
                     
                     if (h.tipo === 'venta') {
                         return [
-                            fechaCap,
-                            'VENTA',
-                            h.breakdown.empCarne.toString(),
-                            h.breakdown.empQueso.toString(),
-                            h.breakdown.papa.toString(),
-                            h.breakdown.rocoto.toString(),
+                            fechaCap, 'VENTA',
+                            (h.breakdown?.empCarne || 0).toString(),
+                            (h.breakdown?.empQueso || 0).toString(),
+                            (h.breakdown?.papa || 0).toString(),
+                            (h.breakdown?.rocoto || 0).toString(),
                             `S/. ${h.monto.toFixed(2)}`
                         ];
                     } else {
-                        return [
-                            fechaCap,
-                            'PAGO',
-                            '-', '-', '-', '-',
-                            `S/. ${h.monto.toFixed(2)}`
-                        ];
+                        return [fechaCap, 'PAGO', '-', '-', '-', '-', `S/. ${h.monto.toFixed(2)}`];
                     }
                 });
 
@@ -337,42 +371,24 @@
                     theme: 'grid',
                     headStyles: { fillColor: [5, 150, 105] },
                     styles: { fontSize: 8, cellPadding: 2 },
-                    columnStyles: {
-                        0: { cellWidth: 35 }, 
-                        1: { cellWidth: 20 },
-                        2: { halign: 'center' },
-                        3: { halign: 'center' },
-                        4: { halign: 'center' },
-                        5: { halign: 'center' },
-                        6: { halign: 'right' }
-                    }
+                    columnStyles: { 0: { cellWidth: 35 }, 1: { cellWidth: 20 }, 2: { halign: 'center' }, 3: { halign: 'center' }, 4: { halign: 'center' }, 5: { halign: 'center' }, 6: { halign: 'right' } }
                 });
-
                 doc.save(`ventas_${new Date().toISOString().split('T')[0]}.pdf`);
                 alert("PDF Descargado. Revisa tus notificaciones.");
             };
 
-            // --- FORMATO DE FECHA VISUAL MEJORADO (APP) ---
             const formatearFecha = (ts) => {
                 const d = new Date(ts);
-                const options = { weekday: 'short', day: '2-digit', month: 'short' };
-                let str = d.toLocaleDateString('es-PE', options);
-                // Capitalizar primera letra: "lun, 28 dic" -> "Lun, 28 dic"
+                let str = d.toLocaleDateString('es-PE', { weekday: 'short', day: '2-digit', month: 'short' });
                 return str.charAt(0).toUpperCase() + str.slice(1);
             };
 
             const guardarRegistroPasado = async () => {
                 if(!pastDate) { alert("Selecciona una fecha"); return; }
-                
                 const [y, m, d] = pastDate.split('-');
-                const fechaRegistro = new Date(y, m-1, d, 12, 0, 0); // Mediodía
-                
-                // --- CORRECCIÓN CRÍTICA ---
-                // Generar ID único agregando milisegundos aleatorios
-                // Esto permite múltiples registros (ventas y pagos) en el mismo día pasado
+                const fechaRegistro = new Date(y, m-1, d, 12, 0, 0); 
                 const randomOffset = Math.floor(Math.random() * 3600000); 
                 const nuevoId = fechaRegistro.getTime() + randomOffset;
-                // --------------------------
                 
                 const batch = db.batch();
                 const movRef = db.collection('movimientos').doc(nuevoId.toString());
@@ -381,58 +397,23 @@
                     const { empCarne, empQueso, papa, rocoto } = pastInputs;
                     const total = calcularTotalVenta(empCarne, empQueso, papa, rocoto);
                     if (total === 0) { alert("Agrega al menos un producto"); return; }
-
-                    batch.set(movRef, {
-                        id: nuevoId,
-                        tipo: 'venta',
-                        monto: total,
-                        timestamp: nuevoId,
-                        breakdown: { ...pastInputs }
-                    });
+                    batch.set(movRef, { id: nuevoId, tipo: 'venta', monto: total, timestamp: nuevoId, breakdown: { ...pastInputs } });
                     alert("¡Venta del pasado guardada correctamente!");
                 } else {
-                    // PAGO
                     const val = parseFloat(pastMonto);
                     if (!val || val <= 0) { alert("Ingresa un monto válido"); return; }
-
-                    batch.set(movRef, {
-                        id: nuevoId,
-                        tipo: 'pago',
-                        monto: val,
-                        timestamp: nuevoId,
-                        detalle: 'Pago a cuenta (Pasado)'
-                    });
+                    batch.set(movRef, { id: nuevoId, tipo: 'pago', monto: val, timestamp: nuevoId, detalle: 'Pago a cuenta (Pasado)' });
                     alert("¡Pago del pasado guardado correctamente!");
                 }
-
                 await batch.commit();
-                // Reset
-                setPastInputs({ empCarne: 0, empQueso: 0, papa: 0, rocoto: 0 });
-                setPastMonto("");
-                setPastDate("");
-                setShowPastSale(false);
+                setPastInputs({ empCarne: 0, empQueso: 0, papa: 0, rocoto: 0 }); setPastMonto(""); setPastDate(""); setShowPastSale(false);
             };
 
             const ejecutarTestCalculos = () => {
-                let sumaVentas = 0;
-                let sumaPagos = 0;
-                historial.forEach(h => {
-                    if(h.tipo === 'venta') sumaVentas += h.monto;
-                    if(h.tipo === 'pago') sumaPagos += h.monto;
-                });
+                let sumaVentas = 0; let sumaPagos = 0;
+                historial.forEach(h => { if(h.tipo === 'venta') sumaVentas += h.monto; if(h.tipo === 'pago') sumaPagos += h.monto; });
                 const totalReal = sumaVentas - sumaPagos;
-                
-                alert(
-                    `📊 DIAGNÓSTICO DE CÁLCULOS:\n\n` +
-                    `➕ Ventas Totales: S/. ${sumaVentas.toFixed(2)}\n` +
-                    `➖ Pagos Totales: S/. ${sumaPagos.toFixed(2)}\n` +
-                    `--------------------------------\n` +
-                    `✅ Saldo Matemático Real: S/. ${totalReal.toFixed(2)}\n` +
-                    `👀 Saldo en Pantalla: S/. ${saldoTotal.toFixed(2)}\n\n` +
-                    (Math.abs(totalReal - saldoTotal) < 0.01 
-                        ? "¡PERFECTO! Todo cuadra al centavo. 🎉" 
-                        : "⚠️ Hay una diferencia. El sistema se auto-corregirá ahora.")
-                );
+                alert(`📊 DIAGNÓSTICO DE CÁLCULOS:\n\n➕ Ventas Totales: S/. ${sumaVentas.toFixed(2)}\n➖ Pagos Totales: S/. ${sumaPagos.toFixed(2)}\n--------------------------------\n✅ Saldo Matemático Real: S/. ${totalReal.toFixed(2)}\n👀 Saldo en Pantalla: S/. ${saldoTotal.toFixed(2)}\n\n${Math.abs(totalReal - saldoTotal) < 0.01 ? "¡PERFECTO! Todo cuadra al centavo. 🎉" : "⚠️ Hay una diferencia."}`);
             };
 
             const toggleMenu = () => setIsMenuOpen(!isMenuOpen); const switchView = (v) => { setView(v); setIsMenuOpen(false); }; const openSettings = () => { setShowSettings(true); setIsMenuOpen(false); };
@@ -461,7 +442,7 @@
                                     <div className="h-px bg-gray-100 my-2"></div>
                                     <button onClick={openSettings} className="w-full text-left p-3 rounded-xl flex items-center gap-3 font-bold text-gray-600 hover:bg-gray-50"><IconSettings /> Configuración</button>
                                 </nav>
-                                <p className="text-center text-xs text-gray-300">v3.2 Fixed</p>
+                                <p className="text-center text-xs text-gray-300">v3.3 Blindada</p>
                             </div>
                         </div>
                     )}
@@ -481,18 +462,7 @@
                                     </div>
                                     {showPayment && (
                                         <div className="mt-4 pt-4 border-t border-gray-700 flex gap-2 animate-in slide-in-from-top-2 fade-in">
-                                            <input 
-                                                type="number" 
-                                                value={montoPago} 
-                                                onChange={e => {
-                                                    let val = e.target.value;
-                                                    // Evitar negativos en string directo
-                                                    if(val.startsWith('-')) val = val.replace('-','');
-                                                    setMontoPago(val);
-                                                }}
-                                                placeholder="0.00" 
-                                                className="flex-1 min-w-0 bg-emerald-100 p-3 rounded-lg text-emerald-900 font-bold text-lg outline-none focus:ring-2 focus:ring-emerald-500 placeholder-emerald-700/50"
-                                            />
+                                            <input type="number" value={montoPago} onChange={e => { let val = e.target.value; if(val.startsWith('-')) val = val.replace('-',''); setMontoPago(val); }} placeholder="0.00" className="flex-1 min-w-0 bg-emerald-100 p-3 rounded-lg text-emerald-900 font-bold text-lg outline-none focus:ring-2 focus:ring-emerald-500 placeholder-emerald-700/50" />
                                             <button onClick={registrarPago} className="bg-emerald-500 hover:bg-emerald-400 px-4 rounded-lg font-bold text-white transition shrink-0">Pagar</button>
                                         </div>
                                     )}
@@ -558,13 +528,10 @@
                                 <label className="font-bold text-gray-600 mb-1">Fecha:</label>
                                 <input type="date" value={pastDate} onChange={e=>setPastDate(e.target.value)} className="p-3 border rounded-lg bg-white font-bold text-lg" />
                             </div>
-
-                            {/* SELECTOR TIPO */}
                             <div className="flex bg-gray-100 p-1 rounded-lg">
                                 <button onClick={()=>setPastType('venta')} className={`flex-1 py-2 rounded-md text-sm font-bold transition ${pastType==='venta' ? 'bg-white text-emerald-600 shadow' : 'text-gray-500'}`}>Venta</button>
                                 <button onClick={()=>setPastType('pago')} className={`flex-1 py-2 rounded-md text-sm font-bold transition ${pastType==='pago' ? 'bg-white text-blue-600 shadow' : 'text-gray-500'}`}>Pago</button>
                             </div>
-
                             {pastType === 'venta' ? (
                                 <div className="space-y-1 pt-2 border-t">
                                     <NumberInput label="Emp. Carne" value={pastInputs.empCarne} onChange={v=>setPastInputs({...pastInputs, empCarne:v})} />
@@ -578,7 +545,6 @@
                                     <input type="number" value={pastMonto} onChange={e=>setPastMonto(e.target.value)} placeholder="0.00" className="border w-full p-3 rounded-lg font-bold text-2xl text-center outline-none focus:ring-2 focus:ring-emerald-500"/>
                                 </div>
                             )}
-
                             <div className="pt-4"><Button onClick={guardarRegistroPasado} className="w-full">Guardar Registro</Button></div>
                         </div>
                     </Modal>
@@ -596,7 +562,6 @@
                             <div className="space-y-3">
                                 <button onClick={ejecutarTestCalculos} className="w-full bg-blue-50 text-blue-700 p-3 rounded-lg text-sm font-bold flex items-center justify-center gap-2 border border-blue-200"><IconBug size={16} /> Diagnóstico de Cálculos</button>
                                 <button onClick={logout} className="w-full bg-emerald-100 text-emerald-800 p-3 rounded-lg text-sm font-bold flex items-center justify-center gap-2 border border-emerald-200"><IconLock size={16} /> Bloquear App (Cerrar Sesión)</button>
-                                <button onClick={resetearTodo} className="w-full border border-red-100 text-red-500 p-3 rounded-lg text-sm flex items-center justify-center gap-2"><IconTrash /> Resetear Todo (Nube)</button>
                             </div>
                         </div>
                     </Modal>
@@ -606,22 +571,13 @@
                              <div className="space-y-3">
                                 {editingItem.tipo === 'venta' ? (
                                     <div className="space-y-1">
-                                        <NumberInput label="Emp. C" value={editingItem.tempBreakdown.empCarne} onChange={v=>setEditingItem({...editingItem, tempBreakdown:{...editingItem.tempBreakdown, empCarne:v}})} />
-                                        <NumberInput label="Emp. Q" value={editingItem.tempBreakdown.empQueso} onChange={v=>setEditingItem({...editingItem, tempBreakdown:{...editingItem.tempBreakdown, empQueso:v}})} />
-                                        <NumberInput label="Papa" value={editingItem.tempBreakdown.papa} onChange={v=>setEditingItem({...editingItem, tempBreakdown:{...editingItem.tempBreakdown, papa:v}})} />
-                                        <NumberInput label="Rocoto" value={editingItem.tempBreakdown.rocoto} onChange={v=>setEditingItem({...editingItem, tempBreakdown:{...editingItem.tempBreakdown, rocoto:v}})} />
+                                        <NumberInput label="Emp. C" value={editingItem.tempBreakdown?.empCarne || 0} onChange={v=>setEditingItem({...editingItem, tempBreakdown:{...editingItem.tempBreakdown, empCarne:v}})} />
+                                        <NumberInput label="Emp. Q" value={editingItem.tempBreakdown?.empQueso || 0} onChange={v=>setEditingItem({...editingItem, tempBreakdown:{...editingItem.tempBreakdown, empQueso:v}})} />
+                                        <NumberInput label="Papa" value={editingItem.tempBreakdown?.papa || 0} onChange={v=>setEditingItem({...editingItem, tempBreakdown:{...editingItem.tempBreakdown, papa:v}})} />
+                                        <NumberInput label="Rocoto" value={editingItem.tempBreakdown?.rocoto || 0} onChange={v=>setEditingItem({...editingItem, tempBreakdown:{...editingItem.tempBreakdown, rocoto:v}})} />
                                     </div>
                                 ) : (
-                                    <input 
-                                        type="number" 
-                                        value={editingItem.tempMonto} 
-                                        onChange={e => {
-                                            let val = e.target.value;
-                                            if(val.startsWith('-')) val = val.replace('-',''); // Solo positivos
-                                            setEditingItem({...editingItem, tempMonto: val});
-                                        }} 
-                                        className="border w-full p-2 font-bold text-xl"
-                                    />
+                                    <input type="number" value={editingItem.tempMonto} onChange={e => { let val = e.target.value; if(val.startsWith('-')) val = val.replace('-',''); setEditingItem({...editingItem, tempMonto: val}); }} className="border w-full p-2 font-bold text-xl" />
                                 )}
                                 <div className="flex gap-2"><button onClick={eliminarItem} className="bg-red-100 text-red-600 p-3 rounded"><IconTrash/></button><button onClick={guardarEdicion} className="bg-blue-600 text-white flex-1 rounded font-bold">Guardar</button></div>
                              </div>
@@ -632,7 +588,11 @@
         }
 
         const root = ReactDOM.createRoot(document.getElementById('root'));
-        root.render(<App />);
+        root.render(
+            <ErrorBoundary>
+                <App />
+            </ErrorBoundary>
+        );
     </script>
 </body>
 </html>
